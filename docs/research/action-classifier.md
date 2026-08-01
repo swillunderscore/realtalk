@@ -33,6 +33,15 @@ is a pure lookup: prose in, one id out.
 
 ## The numbers (all reproducible — see `harness/`)
 
+> A formal statistical treatment of everything below — Wilson confidence
+> intervals, Fisher exact tests, and an honest multiple-comparisons analysis
+> of which effects actually survive — is in
+> [`statistical-analysis.md`](statistical-analysis.md). Short version: the
+> situational-awareness effect and the classifier accuracy are solid; several
+> smaller prompt tweaks are engineering calls, not significant results, and
+> are labelled as such.
+
+
 ### Beat → action accuracy, 48 adversarial cases (`harness/bench.py`)
 
 | model | "explicit" ids (`give_money_to_v`) | "single-verb" ids (`tip`/`charge`) | median latency |
