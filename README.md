@@ -220,6 +220,85 @@ mod ships none of it.
 
 ---
 
+### How the NPC actually *does* things
+
+Worth being precise about this, because it is the unusual part and it is not
+what people assume.
+
+**There is one model call per reply.** No agent loop, no tool schema, no
+planning step, no second pass. The model gets the character card, the
+conversation and your line, and writes one answer. Everything after that is
+plain deterministic code reading that answer.
+
+The card asks for a specific shape, and it is the last thing the model reads
+before it writes:
+
+```
+Reply as <name>: one or two sentences of speech in double quotes, then a few
+plain words for what they physically do, or *the action between asterisks* -
+either way, always something. Like this: "What's up?" *crosses her arms*
+```
+
+Speech is strictly delimited. The action beat deliberately is **not** — "a few
+plain words" or asterisks, whatever the model prefers. That looseness is the
+whole trick: it is the shape a roleplay-tuned model already wants to produce,
+so a 7B complies without being fought.
+
+The reply is then split in two, and the halves drive different machinery:
+
+| part of the reply | what it becomes |
+|---|---|
+| inside the quotes | the transcript, and the text that gets spoken |
+| everything outside | the **beat** — the load-bearing part |
+
+The beat does three jobs at once:
+
+1. **Actions.** Its words are matched against a small vocabulary - `runs`,
+   `walks away`, `steps back`, `puts it down` - and the match becomes a real
+   AI command: a follow command, a threat injection, a move order.
+2. **Animation.** The same beat is searched against Appearance Menu Mod's
+   ~25,000 workspot animations for the nearest match by name, using a
+   thesaurus built from that database's own vocabulary. `crosses her arms`
+   finds an arms-crossed conversation loop.
+3. **Expression** while the line plays.
+
+**Only two things have explicit syntax**, because they move real money and get
+people killed, and inference is too loose for that:
+
+```
+[PAY 500]   [CHARGE 500]   [ATTACK]
+```
+
+Those are genuine tool calls - named in the prompt, parsed, executed (with
+fuzzy matching, because a small model will typo `[FOLLW]`). Everything else is
+inferred from prose the model wrote as fiction.
+
+So the model is choosing **narratively**, not mechanically. When it writes
+`*starts following you*` the character really has decided to follow - that is
+a real decision about the story. What the model does not know is that the
+decision has mechanical consequences. It is writing a scene; the mod is
+listening.
+
+There is a third path, and it covers most ordinary conversation: if **your**
+line was a request ("follow me", "take the shot") and the reply reads as
+agreement - opens with a yes, is not a refusal, is not a question - the
+requested action fires even when no beat was written. That is what makes
+"yeah, alright" work.
+
+**Why this is reliable on a 7B:** the model is never asked to do the thing
+small models are bad at. No JSON, no function schema, no "choose an action
+from this list." Be this person, say something, describe what you do. The
+deterministic side does the parsing, matching, executing and verifying. The
+reliability is not the model being clever - it is the interface asking for
+something the model finds trivially natural.
+
+The honest limit of the design: the vocabulary is finite and matched by hand,
+so the failures are translation failures, not model failures. `"Got him!"` not
+counting as agreement, a question mistaken for a yes, a reply written as pure
+narration falling through both parsers - every one of those was the layer
+mishearing a model that had said exactly the right thing.
+
+
 ## Privacy
 
 Your conversations are not written down anywhere except where the feature
