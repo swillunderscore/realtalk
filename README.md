@@ -516,6 +516,10 @@ The XTTS-v2 voice model is downloaded on first use directly from its
 publisher and is licensed under the
 [Coqui Public Model License](https://coqui.ai/cpml) (non-commercial use).
 
+**If a performer whose voice this can reconstruct, or a rights holder, asks for
+it to come down, it comes down.** No argument. Nothing here is worth putting
+someone's likeness in front of their objection.
+
 ## Credits
 
 - The crowd-capable NPC targeting pattern and the talking-gesture anim entity
