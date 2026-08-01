@@ -47,6 +47,81 @@ public class StTarget {
         return npc;
     }
 
+    // WHAT V IS PHYSICALLY DOING, as a stage direction.
+    //
+    // The NPC has never had any idea. Measured on dpe-7b: told nothing, a
+    // character acknowledged that V was crouched behind cover aiming a rifle
+    // at someone in 2 of 32 replies. Given this beat on V's own line, 30 of
+    // 32 - and unlike putting it in the card (20 of 32), it costs nothing in
+    // format compliance.
+    //
+    // Only things the game states plainly: stance, what is in V's hands, who
+    // V is pointing it at, and whether V is sitting in a car. No inference.
+    public static func PlayerBeat(game: GameInstance) -> String {
+        let player = GetPlayer(game);
+        if !IsDefined(player) {
+            return "";
+        }
+        let bits: String = "";
+
+        // In a vehicle beats everything else - you are not crouching in a car.
+        let car = GetMountedVehicle(player);
+        if IsDefined(car) {
+            return "sitting in the car with them";
+        }
+
+        let bb = GameInstance.GetBlackboardSystem(game)
+            .Get(GetAllBlackboardDefs().PlayerStateMachine);
+        if IsDefined(bb) {
+            let loco: Int32 = bb.GetInt(GetAllBlackboardDefs().PlayerStateMachine.Locomotion);
+            if loco == EnumInt(gamePSMLocomotionStates.Crouch)
+                || loco == EnumInt(gamePSMLocomotionStates.CrouchSprint)
+                || loco == EnumInt(gamePSMLocomotionStates.CrouchDodge) {
+                bits = "crouched";
+            } else {
+                if loco == EnumInt(gamePSMLocomotionStates.Sprint) {
+                    bits = "out of breath from running";
+                }
+            }
+        }
+
+        // What is actually in V's hands, and who it is pointed at.
+        let ts = GameInstance.GetTransactionSystem(game);
+        let weapon: String = "";
+        if IsDefined(ts) {
+            let item = ts.GetItemInSlot(player, t"AttachmentSlots.WeaponRight");
+            if !IsDefined(item) {
+                item = ts.GetItemInSlot(player, t"AttachmentSlots.WeaponLeft");
+            }
+            if IsDefined(item) {
+                // Same route the mod already uses to name an NPC's weapon.
+                let rec = TweakDBInterface.GetItemRecord(
+                    ItemID.GetTDBID(item.GetItemID()));
+                if IsDefined(rec) {
+                    weapon = LocKeyToString(rec.DisplayName());
+                    if StrBeginsWith(weapon, "LocKey#") {
+                        weapon = GetLocalizedText(weapon);
+                    }
+                }
+            }
+        }
+        if StrLen(weapon) > 0 {
+            let at = StTarget.AimObject(game);
+            if IsDefined(at) && !at.IsDead() {
+                let who: String = at.GetDisplayName();
+                if StrBeginsWith(who, "LocKey#") {
+                    who = GetLocalizedText(who);
+                }
+                bits += StrLen(bits) > 0 ? ", " : "";
+                bits += s"pointing a \(weapon) at \(who)";
+            } else {
+                bits += StrLen(bits) > 0 ? ", " : "";
+                bits += s"holding a \(weapon)";
+            }
+        }
+        return bits;
+    }
+
     // WHO V IS POINTING AT - the same look-at without the conversational
     // range clamp. Talking happens at arm's length; shooting does not, and
     // borrowing the talk helper for it meant an order to shoot found "nobody

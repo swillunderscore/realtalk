@@ -1475,6 +1475,27 @@ public class StChat extends ScriptableSystem {
             }
             k += 1;
         }
+        // WHAT V IS DOING WHILE THEY SAY IT, on the newest line only.
+        //
+        // Told nothing, a character noticed that V was crouched behind cover
+        // with a rifle up in 2 of 32 replies; given this, 30 of 32 - with no
+        // cost to format compliance (measured, dpe-7b). Putting the same facts
+        // in the character card instead only reached 20 of 32: it reads as
+        // background there, and as something happening right now here.
+        //
+        // The newest message only, and only on the copy that is SENT. Stamping
+        // it into history would leave a trail of stale poses - "crouched,
+        // holding a Lexington" attached to a line said twenty minutes ago -
+        // and the saved transcript should be what the player typed.
+        let last: Int32 = ArraySize(msgs) - 1;
+        if last > 0 && Equals(msgs[last].role, "user") {
+            let doing: String = StTarget.PlayerBeat(GetGameInstance());
+            if StrLen(doing) > 0 {
+                msgs[last] = this.Msg("user", s"\(msgs[last].content) *\(doing)*");
+                StLog(s"context: V is \(doing)");
+            }
+        }
+
         if firstIdx > 1 {
             StLog(s"context: sending \(total - firstIdx) of \(total - 1) lines (~\(used) tok, budget \(budget)); older lines live in the memory summary");
         }
