@@ -822,6 +822,21 @@ public class StActions extends IScriptable {
             || StActions.Did(b, "takes off") || StActions.Did(b, "runs off") {
             return "run";
         }
+        // HANDING IT OVER, tested before holstering and before dropping,
+        // because all three are things you do with a weapon you are holding
+        // and only one of them ends with V owning it. The direction lives
+        // inside the verb - "hands over", "gives up", "surrenders" all mean
+        // it changed hands, with no to/from left to get backwards. That was
+        // the one thing measurement showed a small model reliably fumbles.
+        if StActions.Did(b, "hands over") || StActions.Did(b, "hands it over")
+            || StActions.Did(b, "surrenders") || StActions.Did(b, "gives up her gun")
+            || StActions.Did(b, "gives up his gun") || StActions.Did(b, "gives up the gun")
+            || StActions.Did(b, "gives v the gun") || StActions.Did(b, "gives v her gun")
+            || StActions.Did(b, "gives v his gun") || StActions.Did(b, "holds out the gun")
+            || StActions.Did(b, "holds out her weapon") || StActions.Did(b, "holds out his weapon")
+            || StActions.Did(b, "offers the gun") || StActions.Did(b, "passes the gun") {
+            return "handover";
+        }
         if StActions.Did(b, "holsters") || StActions.Did(b, "puts it away")
             || StActions.Did(b, "puts the gun away") || StActions.Did(b, "stows")
             || StActions.Did(b, "lowers her weapon") || StActions.Did(b, "lowers his weapon")
@@ -947,6 +962,17 @@ public class StActions extends IScriptable {
         }
         if StrContains(t, "run away") || StrContains(t, "make a run") {
             return "run";
+        }
+        // ASKED TO HAND IT OVER. First, because "give me your gun" contains
+        // neither "away" nor "down" but does contain "gun", and the other two
+        // weapon asks would otherwise swallow the phrasings that mean this.
+        if StrContains(t, "give me your gun") || StrContains(t, "give me the gun")
+            || StrContains(t, "give me that gun") || StrContains(t, "hand over your")
+            || StrContains(t, "hand it over") || StrContains(t, "hand me your")
+            || StrContains(t, "hand me the gun") || StrContains(t, "give me your weapon")
+            || StrContains(t, "give me your piece") || StrContains(t, "ill hold onto")
+            || StrContains(t, "let me hold") {
+            return "handover";
         }
         // ASKED TO PUT IT AWAY - tested before "drop it", because "put that
         // away" and "put that down" are one word apart and mean different
@@ -1171,6 +1197,10 @@ public class StActions extends IScriptable {
         }
         if Equals(intent, "leave") {
             this.Leave(npc, false);
+            return;
+        }
+        if Equals(intent, "handover") {
+            this.HandOver(npc);
             return;
         }
         if Equals(intent, "holster") {
@@ -2667,9 +2697,21 @@ public class StActions extends IScriptable {
         StActions.Announce("puts it away");
     }
 
-    // TAKE IT OFF THEM. The player's own escape hatch for someone who will not
-    // put a weapon down when asked - it ends up in V's inventory, because a gun
-    // that vanishes is a bug and a gun on the floor gets picked back up.
+    // THEY HAND IT OVER. Same transfer as the cheat, but this one is something
+    // the person decided to do - talked into it, or written into their own
+    // beat. The weapon ends up in V's inventory either way, because a gun that
+    // vanishes is a bug and a gun on the floor gets picked straight back up.
+    private func HandOver(npc: ref<NPCPuppet>) -> Void {
+        if this.Disarm(npc) {
+            StLog("action: HANDS THEIR WEAPON OVER");
+        }
+    }
+
+    // Cheats only - run an intent with nobody asked and nobody agreeing.
+    public func RunIntent(npc: ref<NPCPuppet>, intent: String) -> Void {
+        this.ApplyIntentAsked(npc, intent, "", "");
+    }
+
     public func Disarm(npc: ref<NPCPuppet>) -> Bool {
         if !IsDefined(npc) || npc.IsDead() {
             return false;
@@ -2690,8 +2732,8 @@ public class StActions extends IScriptable {
                 let name: String = StActions.HeldItemName(npc);
                 if ts.TransferItem(npc, player, item.GetItemID(), 1) {
                     took = true;
-                    StLog(s"action: DISARM - took \(name)");
-                    StActions.Announce(s"loses \(name) to V");
+                    StLog(s"weapon transferred: \(name)");
+                    StActions.Announce(s"hands over \(name)");
                 }
             }
             i += 1;

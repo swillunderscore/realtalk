@@ -163,20 +163,41 @@ public class StreetTalkInputSystem extends ScriptableSystem {
                     ui.AddLine("--", "npc actions reset", false);
                     return;
                 }
-                // TAKING A WEAPON IS V'S CALL, NOT THE MODEL'S. Asking someone
-                // to put it away is roleplay and goes through the normal
-                // intent path; taking it off them is a decision the player
-                // makes, so it is a command rather than something an NPC can
-                // be talked into doing to itself.
-                if Equals(text, "/disarm") || Equals(text, "/take") {
-                    let dchat = StChat.Get();
-                    if IsDefined(dchat) {
-                        ui.AddLine("--", dchat.DisarmActive()
-                            ? "you take the weapon off them"
-                            : "they have nothing in their hands", false);
+                // CHEATS. These make an NPC do something without asking them,
+                // which is the opposite of what this mod is for - so they are
+                // off unless the player turns them on, and they exist for
+                // testing rather than play. Handing a weapon over is NOT here:
+                // that is something a person can be talked into, so it lives
+                // with the other actions.
+                if StrBeginsWith(text, "/") && settings.cheats {
+                    let cchat = StChat.Get();
+                    if IsDefined(cchat) {
+                        if Equals(text, "/disarm") || Equals(text, "/take") {
+                            ui.AddLine("--", cchat.DisarmActive()
+                                ? "you take the weapon off them"
+                                : "they have nothing in their hands", false);
+                            ui.ClearTyped();
+                            return;
+                        }
+                        if Equals(text, "/kill") {
+                            cchat.CheatAction("attack");
+                            ui.AddLine("--", "they turn on whoever you are looking at", false);
+                            ui.ClearTyped();
+                            return;
+                        }
+                        if Equals(text, "/follow") {
+                            cchat.CheatAction("follow");
+                            ui.AddLine("--", "they follow you", false);
+                            ui.ClearTyped();
+                            return;
+                        }
+                        if Equals(text, "/stay") {
+                            cchat.CheatAction("stop");
+                            ui.AddLine("--", "they stay put", false);
+                            ui.ClearTyped();
+                            return;
+                        }
                     }
-                    ui.ClearTyped();
-                    return;
                 }
                 let chat = StChat.Get();
                 if IsDefined(chat) && !chat.IsBusy() {

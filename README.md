@@ -299,6 +299,27 @@ narration falling through both parsers - every one of those was the layer
 mishearing a model that had said exactly the right thing.
 
 
+### Typed commands
+
+`/reset` always works. Everything else needs **Cheats** turned on in Mod
+Settings, and exists for testing rather than play - they make an NPC do
+something without asking them, which is the opposite of the point.
+
+| command | what it does |
+|---|---|
+| `/reset` (or `/stop`) | undo everything this mod ever commanded on the person in front of you - follow, hold, gestures, hostility - and put them back where the conversation found them |
+| `/follow` | they follow you |
+| `/stay` | they stop following and hold position |
+| `/kill` | they turn on whoever you are looking at (needs Violence on) |
+| `/disarm` (or `/take`) | you take the weapon out of their hands and into your inventory |
+
+Note that **asking** for most of these works without Cheats, because that is
+the actual feature: "put that away", "wait here", "give me your gun" all go
+through the conversation, and the person can say no. `/disarm` is the only one
+with no conversational equivalent - they can *choose* to hand a weapon over,
+but taking it is not something they can be talked into doing to themselves.
+
+
 ## Privacy
 
 Your conversations are not written down anywhere except where the feature

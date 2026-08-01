@@ -94,6 +94,12 @@ public class StreetTalkSettings extends ScriptableSystem {
 
     @runtimeProperty("ModSettings.mod", "Street Talk")
     @runtimeProperty("ModSettings.category", "Conversation")
+    @runtimeProperty("ModSettings.displayName", "Cheats")
+    @runtimeProperty("ModSettings.description", "Typed commands that make an NPC do something without asking them - /disarm, /kill, /follow, /stay. They bypass the conversation entirely, which is the opposite of the point, so they are OFF by default and meant for testing. /reset always works.")
+    public let cheats: Bool = false;
+
+    @runtimeProperty("ModSettings.mod", "Street Talk")
+    @runtimeProperty("ModSettings.category", "Conversation")
     @runtimeProperty("ModSettings.displayName", "Violence")
     @runtimeProperty("ModSettings.description", "NPCs can turn on whoever you are pointing at if you talk them into it. They use the game's own hostility, so it is a real fight with real consequences for your save - and Night City reacts to it. OFF by default. Requires NPC Actions.")
     public let npcCombat: Bool = false;

@@ -1006,6 +1006,14 @@ public class StChat extends ScriptableSystem {
         return true;
     }
 
+    // Cheats only: run an intent directly, with nobody asked and nobody
+    // agreeing. See StreetTalkInput.
+    public func CheatAction(intent: String) -> Void {
+        if IsDefined(this.actions) && IsDefined(this.activeNpc) {
+            this.actions.RunIntent(this.activeNpc, intent);
+        }
+    }
+
     public func DisarmActive() -> Bool {
         return IsDefined(this.actions) && IsDefined(this.activeNpc)
             && this.actions.Disarm(this.activeNpc);
