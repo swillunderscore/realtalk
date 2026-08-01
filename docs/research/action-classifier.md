@@ -31,6 +31,12 @@ One extra model call per reply, on top of the generation:
 The model that writes the scene never knows it's driving a tool. The classifier
 is a pure lookup: prose in, one id out.
 
+(Prior art note: this is the same shape as Google's SayCan — an LLM produces
+free natural language, a separate grounding stage maps it onto the actions the
+system can actually execute. I came up with it independently and found out
+about SayCan afterwards, which is either validating or humbling depending on
+the day. https://say-can.github.io/)
+
 ## The numbers (all reproducible — see `harness/`)
 
 > A formal statistical treatment of everything below — Wilson confidence
