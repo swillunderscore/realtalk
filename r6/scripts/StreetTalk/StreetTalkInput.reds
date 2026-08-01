@@ -163,6 +163,21 @@ public class StreetTalkInputSystem extends ScriptableSystem {
                     ui.AddLine("--", "npc actions reset", false);
                     return;
                 }
+                // TAKING A WEAPON IS V'S CALL, NOT THE MODEL'S. Asking someone
+                // to put it away is roleplay and goes through the normal
+                // intent path; taking it off them is a decision the player
+                // makes, so it is a command rather than something an NPC can
+                // be talked into doing to itself.
+                if Equals(text, "/disarm") || Equals(text, "/take") {
+                    let dchat = StChat.Get();
+                    if IsDefined(dchat) {
+                        ui.AddLine("--", dchat.DisarmActive()
+                            ? "you take the weapon off them"
+                            : "they have nothing in their hands", false);
+                    }
+                    ui.ClearTyped();
+                    return;
+                }
                 let chat = StChat.Get();
                 if IsDefined(chat) && !chat.IsBusy() {
                     ui.AddLine("V", text, true);

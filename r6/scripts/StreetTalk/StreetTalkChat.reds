@@ -1006,6 +1006,11 @@ public class StChat extends ScriptableSystem {
         return true;
     }
 
+    public func DisarmActive() -> Bool {
+        return IsDefined(this.actions) && IsDefined(this.activeNpc)
+            && this.actions.Disarm(this.activeNpc);
+    }
+
     public func ResetNpcActions() -> Void {
         if IsDefined(this.actions) && IsDefined(this.activeNpc) {
             this.actions.EmergencyReset(this.activeNpc);

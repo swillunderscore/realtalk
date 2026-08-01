@@ -822,6 +822,12 @@ public class StActions extends IScriptable {
             || StActions.Did(b, "takes off") || StActions.Did(b, "runs off") {
             return "run";
         }
+        if StActions.Did(b, "holsters") || StActions.Did(b, "puts it away")
+            || StActions.Did(b, "puts the gun away") || StActions.Did(b, "stows")
+            || StActions.Did(b, "lowers her weapon") || StActions.Did(b, "lowers his weapon")
+            || StActions.Did(b, "puts her weapon away") || StActions.Did(b, "puts his weapon away") {
+            return "holster";
+        }
         if StActions.Did(b, "leaves") || StActions.Did(b, "walks away")
             || StActions.Did(b, "walks off") || StActions.Did(b, "turns away")
             || StActions.Did(b, "heads off") || StActions.Did(b, "heads out") {
@@ -941,6 +947,16 @@ public class StActions extends IScriptable {
         }
         if StrContains(t, "run away") || StrContains(t, "make a run") {
             return "run";
+        }
+        // ASKED TO PUT IT AWAY - tested before "drop it", because "put that
+        // away" and "put that down" are one word apart and mean different
+        // things: away is theirs to keep, down is on the floor.
+        if StrContains(t, "put it away") || StrContains(t, "put that away")
+            || StrContains(t, "put the gun away") || StrContains(t, "holster")
+            || StrContains(t, "weapon away") || StrContains(t, "gun away")
+            || StrContains(t, "stop pointing") || StrContains(t, "lower your weapon")
+            || StrContains(t, "lower the gun") {
+            return "holster";
         }
         if StrContains(t, "put it down") || StrContains(t, "drop it")
             || StrContains(t, "drop that") {
@@ -1155,6 +1171,10 @@ public class StActions extends IScriptable {
         }
         if Equals(intent, "leave") {
             this.Leave(npc, false);
+            return;
+        }
+        if Equals(intent, "holster") {
+            this.Holster(npc);
             return;
         }
         if Equals(intent, "drop") {
@@ -2631,6 +2651,55 @@ public class StActions extends IScriptable {
         this.attackTarget = null;
         StLog(s"attack: \(StActions.Readable(npc)) stands down - \(why)");
         StActions.Announce("lowers their weapon");
+    }
+
+    // PUT IT AWAY. Not the same as dropping it: the weapon goes back on their
+    // back or hip and stays theirs. Both hands, because a blade in the left is
+    // still a blade.
+    private func Holster(npc: ref<NPCPuppet>) -> Void {
+        let right = new AIUnequipCommand();
+        right.slotId = t"AttachmentSlots.WeaponRight";
+        AIComponent.SendCommand(npc, right);
+        let left = new AIUnequipCommand();
+        left.slotId = t"AttachmentSlots.WeaponLeft";
+        AIComponent.SendCommand(npc, left);
+        StLog("action: HOLSTER");
+        StActions.Announce("puts it away");
+    }
+
+    // TAKE IT OFF THEM. The player's own escape hatch for someone who will not
+    // put a weapon down when asked - it ends up in V's inventory, because a gun
+    // that vanishes is a bug and a gun on the floor gets picked back up.
+    public func Disarm(npc: ref<NPCPuppet>) -> Bool {
+        if !IsDefined(npc) || npc.IsDead() {
+            return false;
+        }
+        let game = npc.GetGame();
+        let ts = GameInstance.GetTransactionSystem(game);
+        let player = GetPlayer(game);
+        if !IsDefined(ts) || !IsDefined(player) {
+            return false;
+        }
+        let took: Bool = false;
+        let slots: array<TweakDBID> = [t"AttachmentSlots.WeaponRight",
+                                       t"AttachmentSlots.WeaponLeft"];
+        let i: Int32 = 0;
+        while i < ArraySize(slots) {
+            let item = ts.GetItemInSlot(npc, slots[i]);
+            if IsDefined(item) {
+                let name: String = StActions.HeldItemName(npc);
+                if ts.TransferItem(npc, player, item.GetItemID(), 1) {
+                    took = true;
+                    StLog(s"action: DISARM - took \(name)");
+                    StActions.Announce(s"loses \(name) to V");
+                }
+            }
+            i += 1;
+        }
+        if !took {
+            StLog("action: DISARM - their hands were already empty");
+        }
+        return took;
     }
 
     private func DropHeld(npc: ref<NPCPuppet>) -> Void {
