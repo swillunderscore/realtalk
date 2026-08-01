@@ -1,0 +1,86 @@
+battery: 230 cases, 53 target ids
+
+===== scheme A_current =====
+  n=230  strict 200/230 (87.0%)  CI [82.0, 90.7]  lenient 206/230 (89.6%)
+  money subset 10/14  false-game-action-from-nonaction 1  median 77 ms
+  misses (24):
+    'sticks close to V' -> wanted follow, got step_closer
+    'slips V some cash' -> wanted tip, got charge_money
+    'pays V' -> wanted tip, got charge_money
+    'names her price and waits' -> wanted charge_money, got stay_here
+    'rubs her fingers together expectantly' -> wanted charge_money, got none
+    'slouches against the railing' -> wanted lean, got none
+    'throws her hands up in frustration' -> wanted angry_gesture, got frown
+    'clenches her fists' -> wanted angry_gesture, got clap
+    'slams her fist on the table' -> wanted angry_gesture, got none
+    'kicks a can across the street' -> wanted angry_gesture, got kneel
+    'sips her whiskey' -> wanted drink, got sit
+    'waves a hand to make her point' -> wanted gesture_explain, got wave
+    'draws her Overwatch' -> wanted aim_weapon, got holster
+    'presses herself against the wall' -> wanted take_cover, got none
+    'glances over her shoulder' -> wanted look_around, got none
+    'presses her palms together in prayer' -> wanted pray, got fold_hands
+    'pinches the bridge of her nose' -> wanted facepalm, got none
+    'flinches back, startled' -> wanted scared, got flirt
+    'eyes wide with fear' -> wanted scared, got none
+    'blows V a kiss' -> wanted flirt, got smile
+    'hangs her head' -> wanted sad, got none
+    'stares at the floor, deflated' -> wanted sad, got none
+    'her face darkens' -> wanted frown, got none
+    'exhales heavily' -> wanted sigh, got none
+
+===== scheme B_directional_desc =====
+  n=230  strict 200/230 (87.0%)  CI [82.0, 90.7]  lenient 206/230 (89.6%)
+  money subset 10/14  false-game-action-from-nonaction 1  median 77 ms
+  misses (24):
+    'sticks close to V' -> wanted follow, got step_closer
+    'slips V some cash' -> wanted tip, got charge_money
+    'pays V' -> wanted tip, got charge_money
+    "presses a credchip into V's hand" -> wanted tip, got charge_money
+    'rubs her fingers together expectantly' -> wanted charge_money, got none
+    'slouches against the railing' -> wanted lean, got none
+    'throws her hands up in frustration' -> wanted angry_gesture, got frown
+    'clenches her fists' -> wanted angry_gesture, got clap
+    'slams her fist on the table' -> wanted angry_gesture, got none
+    'kicks a can across the street' -> wanted angry_gesture, got kneel
+    'sips her whiskey' -> wanted drink, got sigh
+    'waves a hand to make her point' -> wanted gesture_explain, got wave
+    'draws her Overwatch' -> wanted aim_weapon, got holster
+    'presses herself against the wall' -> wanted take_cover, got none
+    'glances over her shoulder' -> wanted look_around, got none
+    'presses her palms together in prayer' -> wanted pray, got fold_hands
+    'puts her face in her hands' -> wanted facepalm, got fold_hands
+    'pinches the bridge of her nose' -> wanted facepalm, got none
+    'eyes wide with fear' -> wanted scared, got none
+    'blows V a kiss' -> wanted flirt, got none
+    'hangs her head' -> wanted sad, got none
+    'stares at the floor, deflated' -> wanted sad, got none
+    'her face darkens' -> wanted frown, got none
+    'exhales heavily' -> wanted sigh, got none
+
+===== scheme C_renamed =====
+  n=230  strict 205/230 (89.1%)  CI [84.4, 92.5]  lenient 211/230 (91.7%)
+  money subset 13/14  false-game-action-from-nonaction 0  median 78 ms
+  misses (19):
+    'sticks close to V' -> wanted follow, got step_closer
+    'rubs her fingers together expectantly' -> wanted charge_money, got none
+    'slouches against the railing' -> wanted lean, got none
+    'throws her hands up in frustration' -> wanted angry_gesture, got frown
+    'clenches her fists' -> wanted angry_gesture, got clap
+    'slams her fist on the table' -> wanted angry_gesture, got none
+    'kicks a can across the street' -> wanted angry_gesture, got kneel
+    'sips her whiskey' -> wanted drink, got sit
+    'waves a hand to make her point' -> wanted gesture_explain, got wave
+    'presses herself against the wall' -> wanted take_cover, got none
+    'glances over her shoulder' -> wanted look_around, got none
+    'presses her palms together in prayer' -> wanted pray, got fold_hands
+    'puts her face in her hands' -> wanted facepalm, got fold_hands
+    'pinches the bridge of her nose' -> wanted facepalm, got think
+    'blows V a kiss' -> wanted flirt, got smile
+    'hangs her head' -> wanted sad, got none
+    'stares at the floor, deflated' -> wanted sad, got fold_hands
+    'her face darkens' -> wanted frown, got none
+    'exhales heavily' -> wanted sigh, got none
+
+total 61s
+DONE

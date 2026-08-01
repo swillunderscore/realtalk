@@ -112,6 +112,44 @@ These are the load-bearing findings. Ignore them and the numbers regress.
    +7 points on dpe-7b, **zero** on gemma-31B and Opus 5. Interface design
    substitutes for model size and stops mattering once the model is big enough.
 
+## Full-scale battery: 53 ids, n=230, three money-naming schemes (`harness/bigmenu.py`)
+
+The definitive run (2026-08-01). Menu = 12 game actions + **33 gesture
+categories, each verified to have animation coverage in the AMM workspot db** +
+7 facial/no-op ids + none. 230 hand-labelled cases, dpe-7b, run three times with
+different names for the two money actions.
+
+| money id scheme | strict | 95% CI | money subset | false game-actions |
+|---|---|---|---|---|
+| A: `tip` / `charge_money` | 87.0% | [82.0, 90.7] | 10/14 | 1 |
+| B: A + loudly directional *descriptions* | 87.0% | [82.0, 90.7] | 10/14 | 1 |
+| **C: `pay_v` / `bill_v`** | **89.1%** | **[84.4, 92.5]** | **13/14** | **0** |
+
+**The finding: the model reads the id NAME, not the description.** Scheme B kept
+the ids and rewrote the descriptions to shout the direction ("gives their OWN
+eddies", "wants eddies FROM V") — zero effect, identical to A. Scheme C put the
+direction in the id itself (`pay_v`, `bill_v`) — money accuracy 10/14 → 13/14 and
+false game-actions → 0. Descriptions are nearly ignored; **the id is the
+signal**. This confirms the earlier `charge`→`tip` result at 5× the sample.
+
+**Other conclusions from this run:**
+- 53 ids did not degrade accuracy vs the 30-id run — it improved it. Menu size
+  is not the constraint; naming quality is.
+- **Zero false game-actions (scheme C):** no non-action beat ever fired follow,
+  attack, etc. This is the metric that matters most for play — an NPC never
+  walks off or draws a weapon because of a flavour beat.
+- The dangerous neighbour pair `aim_weapon` vs `attack` separated correctly;
+  `draws her Overwatch` mis-hit `holster` in A/B but resolved in C.
+- Remaining ~19 misses are almost all subtle emotion beats with no exact id
+  (`hangs her head`→none, `her face darkens`→none). These fall to `none`, which
+  for a gesture means "neutral idle" — a soft failure, not a wrong action.
+- ~78 ms median, unchanged from the 30-id menu.
+
+**Recommended shipping menu: scheme C naming** (direction inside the id for any
+directional action), plus giving every "flavour" the model likes to write its
+own no-op id (the railroad fix). Sample is n=230 (CI ±~4); a definitive number
+would want n≈400, but the *ordering* of the three schemes is unambiguous.
+
 ## The merged menu: actions + gestures + flavour in one call (`harness/merged.py`)
 
 Tested 2026-08-01 on the biggest battery yet: **35 ids** (the mod's 12 real game
