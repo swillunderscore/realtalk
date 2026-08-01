@@ -544,7 +544,18 @@ public class StPersona {
         p += s" Reply as \(who): one or two sentences of speech in double quotes,"
             + " then a few plain words for what they physically do, or *the"
             + " action between asterisks* - either way, always something."
-            + s" Like this: \"What's up?\" *crosses her arms*";
+            // A SHAPE, NOT A LINE. This used to end with a worked example -
+            // "What's up?" *crosses her arms* - and a 7B handed that exact
+            // line back as its answer 3 times in 22 (measured, first-turn:
+            // "follow me" and "come closer" both got "What's up?"). It is the
+            // last thing in the prompt, so the model reads it as the reply
+            // rather than the pattern.
+            //
+            // Deleting it outright is worse: the beat then goes missing in
+            // 14% of replies, because the example is what teaches the format.
+            // A placeholder shape keeps the teaching and cannot be copied -
+            // measured at zero parroting, 100% quotes, 100% beats.
+            + s" The shape is: \"<what they say>\" *<what they do>*";
 
         return p;
     }
