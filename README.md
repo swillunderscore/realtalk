@@ -222,6 +222,16 @@ mod ships none of it.
 
 ### How the NPC actually *does* things
 
+> **Measured, not asserted.** The prose-to-intent design and a proposed
+> second-pass **action classifier** (a tiny grammar-constrained LLM call that
+> reads the beat and returns one action id) were benchmarked on a local 7B, a
+> 31B, and a frontier model. The numbers, the design rules, and a reproducible
+> test harness live in [`docs/research/action-classifier.md`](docs/research/action-classifier.md).
+> Note the classifier is a *validated design, not yet wired into the mod* — the
+> shipped code uses the hand-written matcher, so searching the scripts for it
+> will (correctly) turn up nothing.
+
+
 Worth being precise about this, because it is the unusual part and it is not
 what people assume.
 

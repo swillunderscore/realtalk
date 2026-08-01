@@ -1,0 +1,4 @@
+with example  parroted 3/22   quotes 95%   beat 100%
+no example    parroted 1/22   quotes 95%   beat 86%
+shape only    parroted 0/22   quotes 100%   beat 100%
+DONE

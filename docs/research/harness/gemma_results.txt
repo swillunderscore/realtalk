@@ -1,0 +1,9 @@
+=== gemma-4-31B, reasoning off ===
+explicit strict 46/48 (96%)  lenient 46/48 (96%)  median 1092 ms
+    'falls in beside V' -> wanted follow, got sit
+    'names her price and waits' -> wanted take_money_from_v, got stay_here
+
+verb     strict 46/48 (96%)  lenient 46/48 (96%)  median 935 ms
+    'falls in beside V' -> wanted follow, got sit
+    'steps in front of V, gun up' -> wanted protect_v, got turn_toward_v
+DONE

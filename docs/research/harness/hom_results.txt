@@ -1,0 +1,7 @@
+=== the money action named 'charge' (a homonym) ===
+    MISS I punch him.                                 -> none       (want attack)
+  id 'charge': 9/10
+=== the same action named 'bill' ===
+    MISS I punch him.                                 -> none       (want attack)
+  id 'bill': 9/10
+DONE

@@ -1,0 +1,6 @@
+V raw    + state  n=96  quotes  92.7%  beat  92.7%  subject  0  echo  0  noticed  59.4%
+V QUOTED + state  n=96  quotes  97.9%  beat  92.7%  subject  1  echo  1  noticed  58.3%
+
+quoted-speech rate, raw 89/96 vs quoted 94/96  -> Fisher p ~ 0.983
+88s
+DONE

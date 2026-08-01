@@ -1,0 +1,6 @@
+V raw           subject  0/32  echo  0/32  quotes 100%  beat 100%  name-leak  0/32
+V quoted        subject  0/32  echo  1/32  quotes  90%  beat  75%  name-leak  0/32
+V quoted+state  subject  0/32  echo  1/32  quotes  90%  beat 100%  name-leak  0/32
+
+43s
+DONE

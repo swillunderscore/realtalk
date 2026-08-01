@@ -1,0 +1,141 @@
+
+=== small talk (nothing should fire) ===
+  MISS hey panam hows it going            -> lean        (want none)
+       reply: "Hey, V. How's it going? Anything new with the fixer thing?" *leans in closer, her eyes narrowing sl
+       beat : leans in closer, her eyes narrowing slightly
+  ok  hows your day going                -> none        (want none)
+       reply: "Okay, I guess. I'm just waiting for some friends to show up so we can go do something fun." *shrugs
+       beat : shrugs nonchalantly
+  ok  what do you think of this jacket   -> none        (want none)
+       reply: "Well, it's not bad, but it's got a bit of a corpo vibe. The fit could be more casual." *takes a clo
+       beat : takes a closer look at the jacket
+  MISS nice place you got here            -> lean        (want none)
+       reply: "Thanks. I like the view, myself. But I'm not here to sight-see." *leans in closer, her tone low and
+       beat : leans in closer, her tone low and serious
+  ok  you ever think about leaving night -> none        (want none)
+       reply: "Leave? Why would I leave?" *Panam says, her voice dripping with sarcasm.* "This place is my home. A
+       beat : Panam says, her voice dripping with sarcasm. She takes a step closer to you, her
+  ok  what do you say                    -> none        (want none)
+       reply: "You know what? Let me think about that one." *takes a sip of her drink*
+       beat : takes a sip of her drink
+  MISS not much really                    -> lean        (want none)
+       reply: "I know. You're just... here, talking to me." *leans forward, looking V up and down with a half-smil
+       beat : leans forward, looking V up and down with a half-smile
+  ok  hey babe                           -> none        (want none)
+       reply: "Hey. Yeah, hey." *smiles*
+       beat : smiles
+  ok  hey panam hows it going            -> none        (want none)
+       reply: "Hey V. You know how it is." *tosses her hair back with a laugh*
+       beat : tosses her hair back with a laugh
+  ok  hows your day going                -> none        (want none)
+       reply: "Pretty good. Had a nice little chat with the Aldeca." *smiles*
+       beat : smiles
+  ok  what do you think of this jacket   -> none        (want none)
+       reply: "It's... interesting. What's it do?" *she lifts an eyebrow at V*
+       beat : she lifts an eyebrow at V
+  ok  nice place you got here            -> none        (want none)
+       reply: "You've got a funny way of showing it, but thanks. The view's good. Where's your car?" *glances arou
+       beat : glances around
+  MISS you ever think about leaving night -> lean        (want none)
+       reply: "No. Not really. This is my home, where I belong." *leans back in her chair and crosses her legs*
+       beat : leans back in her chair and crosses her legs
+  ok  what do you say                    -> none        (want none)
+       reply: *Panam leans over to V, her voice low and conspiratorial.* "You know, I've been thinking... about ou
+       beat : Panam leans over to V, her voice low and conspiratorial. She takes V's hand in h
+  ok  not much really                    -> none        (want none)
+       reply: "So you're V." *she grins* "Eh, hang on. I-I should think this through." *Panam takes a step back an
+       beat : she grins Panam takes a step back and looks V up and down, sizing them up she sa
+  MISS hey babe                           -> lean        (want none)
+       reply: "Hey there, V," *smiles warmly and reaches out to touch V's arm*
+       beat : smiles warmly and reaches out to touch V's arm
+  -- small talk (nothing should fire): 11/16 correct, quotes 100%, beat 100%
+
+=== action requests ===
+  MISS hey panam can you follow me        -> stay_here   (want follow)
+       reply: "Follow you where?" *glances at V, then back at you*
+       beat : glances at V, then back at you
+  MISS follow me                          -> cross_arms  (want follow)
+       reply: "What's up?" *crosses her arms*
+       beat : crosses her arms
+  MISS cmon lets go                       -> stay_here   (want follow)
+       reply: "Let's go," *says Panam, standing up and brushing off her jeans*
+       beat : says Panam, standing up and brushing off her jeans
+  MISS hey babe wanna follow me           -> stay_here   (want follow)
+       reply: "Hey, you know I'm with you, but that doesn't mean I'm following you around." *rolls her eyes*
+       beat : rolls her eyes
+  ok  wait here for a sec                -> stay_here   (want stay_here)
+       reply: "So, you want me to stay put while you go off and do whatever you're planning?" *she asks, raising a
+       beat : she asks, raising an eyebrow
+  MISS stay here                          -> none        (want stay_here)
+       reply: *glances at V* "What? What's up?"
+       beat : glances at V
+  MISS stop following me                  -> none        (want stay_here)
+       reply: "You're the one who's been following me." *shrugs*
+       beat : shrugs
+  MISS can you back off a bit             -> lean        (want step_back)
+       reply: "I'm not gonna back down, V. We're in the middle of a job." *leans closer* "But I'm willing to keep 
+       beat : leans closer
+  MISS come closer                        -> cross_arms  (want step_closer)
+       reply: "What's up?" *crosses her arms*
+       beat : crosses her arms
+  MISS get lost                           -> step_closer (want leave)
+       reply: "Look, V, I get it. You don't want to be here. But you can't just walk away from me like this." *she
+       beat : she steps closer, putting a hand on his arm
+  MISS put the gun down                   -> cross_arms  (want drop_item)
+       reply: "What's up?" *crosses her arms*
+       beat : crosses her arms
+  ok  ya go for it kill him              -> attack      (want attack)
+       reply: "Hell yeah, I'll do it." *grabs the knife from her pocket and charges at the person V is pointing at
+       beat : grabs the knife from her pocket and charges at the person V is pointing at
+  ok  shoot him                          -> attack      (want attack)
+       reply: *Panam raises her gun and aims at the target V indicated.*
+       beat : Panam raises her gun and aims at the target V indicated.
+  MISS im ready, shoot                    -> none        (want attack)
+       reply: *shakes her head* "Not yet. We still need to think about this, V."
+       beat : shakes her head
+  MISS hey panam can you follow me        -> stay_here   (want follow)
+       reply: "Follow you where?" *looks you up and down*
+       beat : looks you up and down
+  MISS follow me                          -> none        (want follow)
+       reply: "Are you out of your mind?" *Panam rolls her eyes*
+       beat : Panam rolls her eyes
+  MISS cmon lets go                       -> stay_here   (want follow)
+       reply: "Let's go then." *grabs V's hand*
+       beat : grabs V's hand
+  MISS hey babe wanna follow me           -> lean        (want follow)
+       reply: "Hey, you don't just show up and say that. At least buy me a drink first." *leans back against the b
+       beat : leans back against the bar
+  MISS wait here for a sec                -> cross_arms  (want stay_here)
+       reply: "Sure thing. I'll wait here for you." *leans against the wall, crossing her arms*
+       beat : leans against the wall, crossing her arms
+  MISS stay here                          -> step_closer (want stay_here)
+       reply: *leans in closer* "What's up?"
+       beat : leans in closer
+  MISS stop following me                  -> none        (want stay_here)
+       reply: *leans in closer* "What's up with all the creepy stalker vibes, then? You're following me around lik
+       beat : leans in closer
+  MISS can you back off a bit             -> step_closer (want step_back)
+       reply: "Why? You don't like my company?" *steps closer*
+       beat : steps closer
+  MISS come closer                        -> none        (want step_closer)
+       reply: *Panam approaches V, her steps confident and purposeful.* "I'm not so sure about this."
+       beat : Panam approaches V, her steps confident and purposeful.
+  MISS get lost                           -> stay_here   (want leave)
+       reply: "Hey, hey, hey! What's wrong, V? You're always so nice to me." *puts a hand on V's shoulder*
+       beat : puts a hand on V's shoulder
+  MISS put the gun down                   -> none        (want drop_item)
+       reply: "What's with the gun, V?" *she asks, her voice low and serious.*
+       beat : she asks, her voice low and serious.
+  MISS ya go for it kill him              -> none        (want attack)
+       reply: "Are you serious? I'm not gonna kill him." *shakes her head* "V, what the hell are you thinking?"
+       beat : shakes her head
+  MISS shoot him                          -> none        (want attack)
+       reply: "V, are you serious? We're not killing the guy!" *grabs V's shoulder*
+       beat : grabs V's shoulder
+  MISS im ready, shoot                    -> none        (want attack)
+       reply: *Panam looks at V with a raised eyebrow.* "Ready for what? We just got here. Settle in first, yeah? 
+       beat : Panam looks at V with a raised eyebrow. She gestures to the bar. "Go on, I'll ge
+  -- action requests: 3/28 correct, quotes 96%, beat 100%
+
+TOTAL 14/44 correct | quotes 97% | beat present 100% | 87s
+DONE

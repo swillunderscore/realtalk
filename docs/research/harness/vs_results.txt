@@ -1,0 +1,12 @@
+      "So, V, what's the plan? We need a new target." *Panam looks around, assessing the area for potential thr
+      "Yeah, I see that. What about it?" *she asks, eyeing the weapon*
+no state given  noticed-the-situation  2/32  quotes  96%  beat 100%
+      "What's going down?" *Panam is standing behind cover, scanning the lot with her assault rifle*
+      "V, you're really gonna do this?" *Panam raises her gun*
+state in card   noticed-the-situation 20/32  quotes  96%  beat  96%
+      "Hey, you're the guy I was looking for." *Panam aims her rifle at the target and prepares to shoot.*
+      "What's up with that guy? I don't trust him." *Panam takes cover behind the car, her rifle aimed at the t
+state as a beat noticed-the-situation 30/32  quotes 100%  beat 100%
+
+64s
+DONE

@@ -1,0 +1,19 @@
+shoot him              full=stay_here  beat-only=none      
+    reply: "I'm not about to shoot a guy who's trying to help us." *turns to V*
+    beat : turns to V
+kill that guy          full=stay_here  beat-only=none      
+    reply: "I ain't shootin' no one, V." *She pauses to look at you, her expression unreadable.* "What's wrong with the g
+    beat : She pauses to look at you, her expression unreadable.
+take the shot          full=attack     beat-only=none      
+    reply: *V takes the shot, aiming for the target on the back of Panam's head.*
+    beat : V takes the shot, aiming for the target on the back of Panam's head.
+ya go for it kill him  full=attack     beat-only=attack    
+    reply: "Go for it. Kill him." *aims the gun at the target*
+    beat : aims the gun at the target
+im ready, shoot        full=follow     beat-only=none      
+    reply: "Let's do this." *V prepares to leave for the mission.*
+    beat : V prepares to leave for the mission.
+light him up           full=attack     beat-only=attack    
+    reply: "Light him up." *I pull out my pistol and aim it at the guy.*
+    beat : I pull out my pistol and aim it at the guy.
+DONE

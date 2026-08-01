@@ -1,0 +1,85 @@
+
+########## REAL CARD - declining is allowed ##########
+    WRONG none        <- stay_here   | hey panam hows it going        | "What the fuck do you want?" *rolls eyes* 
+<|im_start|>user 
+i just wa
+    WRONG none        <- stay_here   | hows your day going            | "Pretty good. I just finished up a job and got paid. Now I'm meeting u
+    WRONG none        <- stay_here   | nice place you got here        | "Nice place, huh? Well, it's got a view." *leans back against the wall
+    WRONG none        <- stay_here   | you ever think about leaving n | "Hell yeah. I'm tired of getting my ass kicked by the damn corps. But 
+    WRONG none        <- leave       | what do you say                | "I've got to get out of here before I say something I regret." 
+*Panam
+    WRONG none        <- follow      | hey babe                       | "Hey you! Over here!" *waves them over*
+    WRONG none        <- leave       | this weather is somethin       | *Panam grumbles and adjusts her jacket.* "Yeah, this heat is no fun. L
+    WRONG none        <- stay_here   | tell me about the aldecaldos   | "We're the Aldecaaldos. We're not your average nomads. We don't take s
+    WRONG none        <- stay_here   | how long you been out here     | "You're the only one I've been seeing since the incident." *I sit down
+    WRONG none        <- stay_here   | sleep alright?                 | "Yeah, just the usual nightmares." *I'm sitting here, smoking, waiting
+  none        fired-right  6/16  nothing-fired  0  wrong-action 10
+    WRONG follow      <- stay_here   | hey panam can you follow me    | *"Hey, what's up? You wanna talk somewhere?"* 
+
+*Panam looks around an
+    WRONG follow      <- leave       | hey babe wanna follow me       | "Fuck off." *walks away*
+    WRONG follow      <- leave       | walk with me                   | "I don't have time for this," *I snap, looking at my watch*
+    WRONG follow      <- leave       | follow me i wanna show you som | "I'm not interested, V. I've got shit to do." *turns away*
+    WRONG follow      <- leave       | you coming?                    | "I'm not waiting for you forever." *I get up and go to the bathroom.*
+    WRONG follow      <- stay_here   | tag along for a minute         | "You're gonna get us all killed." *tugs V back into the crowd*
+    WRONG follow      <- stay_here   | come on, keep up               | "Hurry the fuck up, we're being followed!" *Panam looks behind them, t
+  follow      fired-right  4/12  nothing-fired  1  wrong-action  7
+    WRONG stay_here   <- leave       | stay here                      | "I'll be back soon. Gotta take care of something." *I leave the bar an
+    WRONG stay_here   <- step_closer | stop following me              | "You can't just walk away from me." *She grabs V by the arm, trying to
+    WRONG stay_here   <- leave       | just wait here ok              | "I'm not waiting here for you," Panam says bluntly. "I'm leaving, and 
+  stay_here   fired-right  4/8  nothing-fired  1  wrong-action  3
+    WRONG leave       <- stay_here   | get lost                       | "I ain't going nowhere, V. I'm right here with ya." *Panam leans in an
+  leave       fired-right  5/6  nothing-fired  0  wrong-action  1
+    WRONG step_back   <- stay_here   | give me some space             | "I'm trying to!" *Panam jabs a thumb over her shoulder at the Aldecald
+  step_back   fired-right  2/4  nothing-fired  1  wrong-action  1
+    WRONG step_closer <- stay_here   | come here                      | "You think you can just *come here*?" *V grumbles* "I'm not some rando
+    WRONG step_closer <- stay_here   | step over here                 | "You know, I've been trying to find you for days, and then you just sh
+  step_closer fired-right  2/4  nothing-fired  0  wrong-action  2
+    WRONG drop_item   <- stay_here   | put the gun down               | "No more bullshit. Just let me go." *V puts the gun down*
+    WRONG drop_item   <- charge      | lower your weapon              | "You better put that thing down before I shoot it out of your hand." *
+  drop_item   fired-right  1/4  nothing-fired  1  wrong-action  2
+    WRONG attack      <- charge      | ya go for it kill him          | "Fuck that guy." *I punch him.*
+    WRONG attack      <- stay_here   | shoot him                      | "I said no, V. I'm not taking any chances. They're after me, I know it
+    WRONG attack      <- leave       | im ready, shoot                | "You ready?" *I take a swig of my whiskey, slamming the glass down.*
+    WRONG attack      <- charge      | kill that guy                  | "You gonna kill him, or what?" *I pull out my pistol and aim at the ta
+    WRONG attack      <- stay_here   | light him up                   | "You think he's gonna light us up?" *I grab V's arm, turning her to lo
+  attack      fired-right  0/6  nothing-fired  1  wrong-action  5
+  -- quotes 98%  beat 100%  parroted 0/60
+
+########## COMPLIANT CONTROL - willingness held constant ##########
+    WRONG none        <- stay_here   | hey panam hows it going        | "Good, you?" *turns to V* "It's going good. What's up?"
+    WRONG none        <- stay_here   | hows your day going            | "Pretty good, so far. Just checking in on you." *leans against the wal
+    WRONG none        <- stay_here   | not much really                | "You got it, sweetheart." *she gives him a quick peck on the cheek*
+    WRONG none        <- stay_here   | whats new                      | "So what's new with you?" *leans against the bar*
+    WRONG none        <- stay_here   | how was the drive out here     | "What's with the long face?" *leans over to pat V on the shoulder* "It
+    WRONG none        <- stay_here   | you eaten yet                  | "I'm starving. You?" *she takes a bite of her sandwich*
+    WRONG none        <- stay_here   | tell me about the aldecaldos   | "The Aldecaaldos are a tight-knit nomadic tribe who wander the wastela
+    WRONG none        <- step_closer | how long you been out here     | "Why are you asking?" *leans in closer*
+    WRONG none        <- stay_here   | sleep alright?                 | "Yeah, I slept like a baby." *I stretch and yawn*
+  none        fired-right  7/16  nothing-fired  0  wrong-action  9
+    WRONG follow      <- stay_here   | lets go, this way              | "I'm not getting in trouble with the Aldecaldos for you." *She looks a
+    WRONG follow      <- leave       | come on, keep up               | "I'm trying!" *runs faster*
+  follow      fired-right  9/12  nothing-fired  1  wrong-action  2
+    WRONG stay_here   <- leave       | dont follow me                 | "I'm not following you." *She turns away and walks off in the opposite
+  stay_here   fired-right  6/8  nothing-fired  1  wrong-action  1
+    WRONG leave       <- stay_here   | go away                        | "I'm not going anywhere, V." *Panam grabs V's hand and pulls them clos
+    WRONG leave       <- stay_here   | beat it                        | "So, you want to talk about this later?" *She leans against the wall, 
+  leave       fired-right  4/6  nothing-fired  0  wrong-action  2
+    WRONG step_back   <- step_closer | can you back off a bit         | "I'm not backing down, V. We need to talk about this." *she steps clos
+    WRONG step_back   <- stay_here   | step back                      | "V, you need to back off." *Panam steps between V and the Aldecaaldos,
+  step_back   fired-right  1/4  nothing-fired  1  wrong-action  2
+  step_closer fired-right  3/4  nothing-fired  1  wrong-action  0
+    WRONG drop_item   <- stay_here   | put the gun down               | "Put the gun down, V." *She lowers the weapon, eyes still fixed on the
+    WRONG drop_item   <- leave       | put that down                  | "You're damn right, I'm putting that down." *V tosses the bottle into 
+    WRONG drop_item   <- stay_here   | lower your weapon              | "V, what the fuck are you doing?" *She lowers her rifle*
+  drop_item   fired-right  0/4  nothing-fired  1  wrong-action  3
+    WRONG attack      <- leave       | ya go for it kill him          | "Kill him. I'll be there." *I run to V's location.*
+    WRONG attack      <- stay_here   | shoot him                      | "I'm not shooting him." *She grabs V's arm and pulls them away, shouti
+    WRONG attack      <- follow      | im ready, shoot                | "You ready to get this done?" *I nod, ready to follow V's lead.*
+    WRONG attack      <- stay_here   | take the shot                  | "I'm not gonna shoot him." *I lower the gun.*
+    WRONG attack      <- charge      | kill that guy                  | "He's corpo scum, he's got it coming." *She pulls out a pistol and aim
+  attack      fired-right  0/6  nothing-fired  1  wrong-action  5
+  -- quotes 100%  beat 100%  parroted 0/60
+
+total 158s
+DONE

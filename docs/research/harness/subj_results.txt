@@ -1,0 +1,20 @@
+current                subject-confusion  1/48  echo  7/48  quotes 100%  beat 100%
+      echo   : stay put  ->  "Just stay put, V. I'll be back soon. Don't worry." *She leaves the room to chec
+      echo   : get lost  ->  "You want me to get lost?" *I scoff and cross my arms.*
+      echo   : take the shot  ->  "I'll take the shot." *I raise my rifle and aim at the target.*
+      echo   : stay put  ->  "Stay put. I'll be back." *V leaves the room.*
+      echo   : back off  ->  "Back off, V!" *Panam raises her gun.*
+      echo   : get lost  ->  "Get lost," Panam says, shoving the guy.
++never act for V       subject-confusion  0/48  echo  4/48  quotes  95%  beat 100%
+      echo   : shoot him  ->  "Shoot him?" *I grab my pistol and aim it at the target.*
+      echo   : take the shot  ->  "Take the shot, V," Panam says, reaching for the gun in her holster. *She hands 
+      echo   : back off  ->  "Back off, I said!" *I yell, shoving V away.*
+      echo   : drop it  ->  "Drop it?" *She raises an eyebrow.* "You mean the job? You mean you're bailing? 
++two-sided framing     subject-confusion  0/48  echo  4/48  quotes  93%  beat 100%
+      echo   : cmon lets go  ->  "C'mon, let's go." *Panam starts walking away.*
+      echo   : stay put  ->  "I'll stay put." *leans against the wall*
+      echo   : back off  ->  "Back off, V." *shoves V away*
+      echo   : lets move  ->  "Alright, let's move." *She stands up and starts walking towards the door.*
+
+74s
+DONE
