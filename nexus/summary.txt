@@ -1,0 +1,1 @@
+Talk to any NPC - type anything, they answer in character with their own cloned voice, remember you across sessions, and can act on what you say. 100% local (no account, nothing leaves your PC) or cloud if you prefer. Voices are built live from your own game files; nothing AI-generated ships in the download.

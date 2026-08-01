@@ -1,0 +1,40 @@
+[size=4][b]Talk to Night City's people. Actually talk.[/b][/size]
+
+Look at any NPC, press [b]R[/b], and type whatever you want. They answer in character - generated live by an AI model - [b]in a cloned approximation of their own voice[/b], built on the spot from the voice lines already inside your own game files. Shopkeepers, bartenders and ripperdocs remember you between sessions. Ask someone to walk with you and they might.
+
+Run it [b]100% locally[/b] - no account, no API key, nothing leaves your PC - or point it at a cloud provider (OpenRouter) if you'd rather not run a model yourself.
+
+[size=4][b]What it does[/b][/size]
+[list]
+[*]Free-text conversation with any community NPC, and (optionally) any crowd pedestrian
+[*][b]Voices:[/b] the first time a character speaks, their real voice lines are extracted from [i]your[/i] game archives and cloned - locally, cached forever. Crowd NPCs get matching archive voices too (right gender, varied by look). Words appear on screen as they're spoken.
+[*][b]Memory:[/b] persistent per-character memory and conversation history across sessions. Characters know who they are, where they are, what time it is, and what Night City is talking about.
+[*][b]Actions:[/b] NPCs act on the conversation - they follow you, ride along in your car, hand over or take eddies, walk off, and (separate switch) fight whoever you point them at. Off by default, /reset escape hatch included.
+[*]NPCs stop and turn to face you while you talk - except companions already walking with you, whose own movement decides where they look. With AMM installed they gesture while speaking. Chatty NPCs quiet down while their reply plays.
+[/list]
+
+[size=4][b]Requirements[/b][/size]
+[list]
+[*][url=https://www.nexusmods.com/cyberpunk2077/mods/2380]RED4ext[/url], [url=https://www.nexusmods.com/cyberpunk2077/mods/1511]redscript[/url], [url=https://www.nexusmods.com/cyberpunk2077/mods/7780]Codeware[/url], [url=https://www.nexusmods.com/cyberpunk2077/mods/16948]RedData[/url], [url=https://www.nexusmods.com/cyberpunk2077/mods/13378]RedFileSystem[/url], [url=https://www.nexusmods.com/cyberpunk2077/mods/4885]Mod Settings[/url]
+[*][b]RedHttpClient 0.7.1+[/b] from [url=https://github.com/rayshader/cp2077-red-httpclient/releases]GitHub releases[/url] (older builds lack -no-tls and fail silently)
+[*]Optional: [url=https://www.nexusmods.com/cyberpunk2077/mods/12001]Audioware[/url] for spoken replies, [url=https://www.nexusmods.com/cyberpunk2077/mods/790]Appearance Menu Mod[/url] for talking gestures
+[*]An AI model: any local OpenAI-compatible server (LM Studio, Ollama, llama.cpp - a 7B model and ~5 GB of VRAM headroom is enough), or an OpenRouter API key
+[/list]
+
+[b]Local model users:[/b] add [font=Courier New]%command% -no-tls[/font] to your Steam launch options or the mod will look completely dead. Full setup, model recommendations and troubleshooting are in the README on [url=https://github.com/swillunderscore/streettalk]GitHub[/url].
+
+[size=4][b]AI disclosure[/b][/size]
+This mod uses AI [i]at runtime[/i] and ships none of its output. Dialogue text comes from the model you connect. Voices are synthesized on your own CPU by XTTS-v2 ([url=https://coqui.ai/cpml]CPML licensed[/url], non-commercial, downloaded on first use), cloned from lines already in your own game archives. The download contains no AI-generated content, no model weights, and no game assets - it is readable scripts and a readable Python server, MIT licensed, source on GitHub.
+
+[size=4][b]How is this different from hand-built character mods?[/b][/size]
+There is no character list. The card is assembled live from your own game state at the moment you open the chat: scanner-resolved name (quest reveals included), faction, district, time of day, attitude, your quest progress, the character's own harvested voice lines as examples, and their memory of your past conversations. Slightly leaner per character than a lovingly hand-written card - but it's [i]everyone[/i], including the DLC nobody writes cards for.
+
+[size=4][b]If there's interest[/b][/size]
+The same machinery would extend naturally to texting any NPC from your phone - what [url=https://www.nexusmods.com/cyberpunk2077/mods/14149]Generative Texting[/url] pioneered for its hand-added cast, generalized to everyone. If people want it, that's the next thing.
+
+[size=4][b]Honest notes[/b][/size]
+[list]
+[*][b]This mod can change your save for good.[/b] NPCs move, spend money and - with Violence turned on - kill people, including ones a quest needs. It does not second-guess what you ask for. Back up your saves.
+[*]Character fidelity is a 7B model doing its best with a well-built prompt: story characters know their history with V, strangers don't know your name, and everyone still hallucinates sometimes. That's part of the charm.
+[*]Voice synthesis runs on CPU so it never fights the game for GPU; replies speak a few seconds after the text starts.
+[/list]

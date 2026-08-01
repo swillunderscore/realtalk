@@ -1,0 +1,72 @@
+# ============================================================================
+#  STREET TALK - interaction record
+# ============================================================================
+#
+#  Adds a "TALK" entry to an NPC's real interaction list - the scrollable
+#  yellow/blue options you get walking up to someone - rather than drawing a
+#  competing prompt over the top of them.
+#
+#  WHY THIS RATHER THAN A KEYBIND:
+#    Two earlier approaches failed and are recorded so they aren't retried.
+#    Pushing an InteractionChoiceHubData onto the UIInteractions blackboard
+#    only rendered in the gaps between the game's own writes, because the game
+#    rewrites that blackboard continuously. Binding to one_click_confirm
+#    collided with the dialogue-select key on exactly the NPCs this is for.
+#
+#    Choices are actually built by the game from ObjectAction_Record entries
+#    (GetValidChoices -> PushChoicesToInteractionComponent), so defining a
+#    record and letting the vanilla pipeline surface it is the correct path.
+#
+#  SCHEMA SOURCE: read off GenericInteraction.Talk at runtime via CET, not
+#  guessed. That record resolves to:
+#      objectActionUI    Interactions.GenericTalk
+#      actionName        GenericTalk
+#      objectActionType  ObjectActionType.Direct
+#      priority          0
+#      interactionCondition / prereqs   unset
+#
+#  Inheriting from it means every field we don't override is already correct.
+# ============================================================================
+
+# The on-screen label for the choice.
+Interactions.StreetTalkUI:
+  $base: Interactions.GenericTalk
+  name: StreetTalkUI
+  # Shown in the interaction list. Kept short - it sits alongside vanilla verbs.
+  caption: Chat
+
+# The action itself.
+ObjectAction.StreetTalk_Talk:
+  $base: GenericInteraction.Talk
+  actionName: StreetTalkTalk
+  objectActionUI: Interactions.StreetTalkUI
+  # Direct = a plain interaction the player selects, same as vanilla talk.
+  objectActionType: ObjectActionType.Direct
+  # Above 0 so it sorts near the top of the list rather than under scavenging
+  # and other generic verbs.
+  priority: 10
+
+# ---------------------------------------------------------------------------
+#  Attachment
+# ---------------------------------------------------------------------------
+#  Done HERE, in YAML, not in redscript.
+#
+#  The runtime version could not work: it built the flat path as
+#  `recordId + t".objectActions"`, and record names are hashes at runtime with
+#  no way to recover the string (ToStringDEBUG does not round-trip in a release
+#  build). The verify harness confirmed the result - the gunsmith kept its 47
+#  vanilla actions, vanillaTalk=true, ourChat=false. The loop found the right
+#  record and matched the right condition; the write landed on a dead key.
+#
+#  In YAML, TweakXL resolves these names at load, so the path is correct by
+#  construction. `!append-once` adds without replacing - a plain assignment
+#  would wipe the vanilla 47 and remove takedowns and body pickup.
+# ---------------------------------------------------------------------------
+
+Character.hey_gle_gunsmith_01:
+  objectActions:
+    - !append-once ObjectAction.StreetTalk_Talk
+
+Character.sts_ep1_10_bill_hotdog_vendor:
+  objectActions:
+    - !append-once ObjectAction.StreetTalk_Talk

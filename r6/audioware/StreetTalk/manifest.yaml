@@ -1,0 +1,25 @@
+# StreetTalk voice slots.
+#
+# Format matches the working example on this install
+# (r6/audioware/ppnc_car_audio_emitters/car_radios_manifest.yaml).
+#
+# usage: on-demand is the load-bearing choice: Audioware reads the file from
+# disk EACH time it plays ("loaded all-at-once each time on-demand, and never
+# kept around"), so the TTS server can overwrite a slot between plays and the
+# next play speaks the new line. The wavs shipped here are 0.2s of silence -
+# placeholders for the server to write over.
+version: 1.0.0
+
+sfx:
+  streettalk_slot_0:
+    file: ./slots/slot_0.wav
+    usage: on-demand
+  streettalk_slot_1:
+    file: ./slots/slot_1.wav
+    usage: on-demand
+  streettalk_slot_2:
+    file: ./slots/slot_2.wav
+    usage: on-demand
+  streettalk_slot_3:
+    file: ./slots/slot_3.wav
+    usage: on-demand

@@ -1,0 +1,8 @@
+# Started automatically by streettalk-launch.sh when you launch the game,
+# stopped when the game exits. One command per line; relative paths resolve
+# against the server/ directory. Lines starting with # are ignored.
+
+npc-tts-server.sh
+
+# Add your model server too and the Steam Play button does everything:
+# /path/to/your/llama-server --model /path/to/model.gguf --host 127.0.0.1 --port 8080

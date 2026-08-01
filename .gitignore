@@ -1,0 +1,21 @@
+# Runtime artifacts - never shipped, never committed.
+#
+# server/voices/ and training datasets contain audio EXTRACTED FROM THE
+# PLAYER'S OWN GAME ARCHIVES (CD Projekt Red copyrighted VO). They are forged
+# locally on each player's machine at runtime and must never enter a release
+# zip or a git push.
+server/.venv/
+server/voices/
+server/logs/
+server/__pycache__/
+server/roster.json
+training/
+
+# Machine-local sidecar list - never committed (see sidecars.conf.example)
+server/sidecars.conf
+
+# Machine-local paths for the voice server (see local.conf.example)
+server/local.conf
+
+# Built release zips
+dist/
