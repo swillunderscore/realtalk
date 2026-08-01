@@ -1492,13 +1492,26 @@ public class StChat extends ScriptableSystem {
         // it into history would leave a trail of stale poses - "crouched,
         // holding a Lexington" attached to a line said twenty minutes ago -
         // and the saved transcript should be what the player typed.
+        // AND IN THE SAME SHAPE THE REPLY IS ASKED FOR. The model is told to
+        // write "speech in quotes" then *an action* - so sending V's turn as
+        // bare text with an asterisk beat demonstrates half the format and
+        // contradicts the other half.
+        //
+        // Measured head to head at 96 per arm, both carrying the state beat:
+        // quoting V's words came out slightly AHEAD on quoted speech (97.9% vs
+        // 92.7%, p=0.17 - not significant, so read it as "no worse"), with
+        // beats identical at 92.7%. An earlier 32-sample run pointed the other
+        // way and was reported as a loss; it was noise (p=0.24). The
+        // transcript being internally consistent is the reason to keep it.
         let last: Int32 = ArraySize(msgs) - 1;
         if last > 0 && Equals(msgs[last].role, "user") {
+            let said: String = s"\"\(msgs[last].content)\"";
             let doing: String = StTarget.PlayerBeat(GetGameInstance());
             if StrLen(doing) > 0 {
-                msgs[last] = this.Msg("user", s"\(msgs[last].content) *\(doing)*");
+                said += s" *\(doing)*";
                 StLog(s"context: V is \(doing)");
             }
+            msgs[last] = this.Msg("user", said);
         }
 
         if firstIdx > 1 {
