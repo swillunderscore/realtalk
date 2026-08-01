@@ -1,0 +1,17 @@
+MERGED MENU (34 ids + none)  n=94
+  strict 87/94 (92.6%)   lenient 88/94 (93.6%)
+  median 76 ms
+  action   strict 43/46  lenient 43/46
+  flavour  strict 16/18  lenient 17/18
+  gesture  strict 28/30  lenient 28/30
+
+misses:
+  'follows close behind' -> wanted follow, got step_closer
+  'slips V some cash' -> wanted tip, got charge_money
+  'names her price and waits' -> wanted charge_money, got stay_here
+  'throws her hands up in frustration' -> wanted angry_gesture, got frown
+  'clenches her fists' -> wanted angry_gesture, got none
+  'says nothing for a moment' -> wanted say_nothing, got none
+
+8s
+DONE

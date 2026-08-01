@@ -112,6 +112,36 @@ These are the load-bearing findings. Ignore them and the numbers regress.
    +7 points on dpe-7b, **zero** on gemma-31B and Opus 5. Interface design
    substitutes for model size and stops mattering once the model is big enough.
 
+## The merged menu: actions + gestures + flavour in one call (`harness/merged.py`)
+
+Tested 2026-08-01 on the biggest battery yet: **35 ids** (the mod's 12 real game
+actions, 15 gestures each mapped to an animation search term verified against
+the AMM workspot database, 7 facial/no-op ids, plus `none`), **n=94**, dpe-7b.
+
+```
+strict 92.6%  lenient 93.6%  median 76 ms
+actions 43/46   gestures 28/30   flavour 16/18
+```
+
+Best result of any configuration, on the hardest test. Findings:
+
+- **The railroad fix works.** With `smile` on the menu as a legal no-op,
+  `"smiles faintly"` classifies correctly instead of being grammar-railroaded
+  into `smoke` (shared `sm` prefix). Give the model ids for the things it wants
+  to say, even when they map to nothing.
+- **`charge_money` (domain in the name) fixed a standing money miss**, and the
+  homonym trap `"charges at the man with a knife"` still went to `attack`.
+- **A bigger menu did not slow or degrade anything** — 35 ids at 76 ms, higher
+  accuracy than the 30-id run, because more legal exits mean less railroading.
+- **Routing design this validates:** game-action ids → redscript commands;
+  gesture ids → animation search with a *canonical* term (fixing fuzzy-search
+  misses from odd phrasing); facial ids → the facial-expression system
+  (facial expressions have ZERO hits in the workspot database — they are not
+  workspot animations); `none`/`say_nothing` → random conversational idle.
+- **Residual errors:** the money to/from direction (1 each way) and one token
+  steal (`"names her price and waits"` → `stay_here` via "waits"). Wrong-action
+  rate on game beats: 3/46.
+
 ## Scaling further: hierarchical classification (untested, next step)
 
 To go past ~80 actions, walk a coarse-to-fine tree: category (≤10) →
