@@ -555,7 +555,16 @@ public class StPersona {
             // 14% of replies, because the example is what teaches the format.
             // A placeholder shape keeps the teaching and cannot be copied -
             // measured at zero parroting, 100% quotes, 100% beats.
-            + s" The shape is: \"<what they say>\" *<what they do>*";
+            + s" The shape is: \"<what they say>\" *<what they do>*"
+            // WHOSE REPLY IS IT. Without this the model sometimes writes the
+            // PLAYER's action into the beat - "*V takes the shot*", "*V
+            // prepares to leave*" - and the mod then performs it on the NPC,
+            // which is how someone does a thing V never asked for. Measured:
+            // subject confusion 1/48 -> 0/48, and the model echoing V's own
+            // line back as its dialogue 7/48 -> 4/48. Framing the card as a
+            // two-sided conversation on top of this added nothing and cost
+            // format compliance, so it is deliberately not here."
+            + " Never speak or act for V - only write what they themselves say and do.";
 
         return p;
     }
