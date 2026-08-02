@@ -1,4 +1,4 @@
-# StreetTalk first-run bootstrap (Windows). Plain script on purpose - read
+# RealTalk first-run bootstrap (Windows). Plain script on purpose - read
 # every line. It fetches ORDINARY, well-known tools into this folder and
 # nothing else on the system is touched:
 #

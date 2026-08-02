@@ -5,10 +5,10 @@ Everything the upload form asks for, and where it already exists here.
 ## 1. The file
 
 ```
-./package-release.sh 1.0.0      # -> dist/StreetTalk-1.0.0.zip
+./package-release.sh 1.0.0      # -> dist/RealTalk-1.0.0.zip
 ```
 
-Game-root relative (`r6/…`, `tools/StreetTalk/…`), so Vortex/MO2 install it
+Game-root relative (`r6/…`, `tools/RealTalk/…`), so Vortex/MO2 install it
 in one step and a manual drag works too. The packager refuses to build if
 game-derived audio, machine-local config, or developer paths are present.
 
@@ -20,7 +20,7 @@ scripts compile against the deployed set.
 
 | Field | Use |
 |---|---|
-| Name | Street Talk |
+| Name | Real Talk |
 | Summary | `nexus/summary.txt` |
 | Description | `nexus/description.bbcode` (paste as BBCode) |
 | Category | Gameplay (Cyberpunk 2077) |

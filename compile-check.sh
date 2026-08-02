@@ -11,15 +11,15 @@
 # Wine pops scc's failure dialog on the desktop unless the display env is
 # emptied - that stray dialog scared the user once. Headless, always.
 set -u
-# Your game directory. Set STREETTALK_GAME_DIR in the environment (or in
+# Your game directory. Set REALTALK_GAME_DIR in the environment (or in
 # server/local.conf, which is machine-local and never committed) - no
 # developer's own paths belong in a public repo.
-GAME="${STREETTALK_GAME_DIR:-}"
+GAME="${REALTALK_GAME_DIR:-}"
 if [ -z "$GAME" ] && [ -f "$(dirname "$0")/server/local.conf" ]; then
-    GAME=$(. "$(dirname "$0")/server/local.conf" 2>/dev/null; echo "$STREETTALK_GAME_DIR")
+    GAME=$(. "$(dirname "$0")/server/local.conf" 2>/dev/null; echo "$REALTALK_GAME_DIR")
 fi
 if [ -z "$GAME" ]; then
-    echo "compile-check: set STREETTALK_GAME_DIR (or put it in server/local.conf)" >&2
+    echo "compile-check: set REALTALK_GAME_DIR (or put it in server/local.conf)" >&2
     exit 2
 fi
 SCC="$GAME/engine/tools/scc.exe"

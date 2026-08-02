@@ -1,4 +1,4 @@
-# Statistical analysis of the StreetTalk prompt experiments
+# Statistical analysis of the RealTalk prompt experiments
 
 *A post-hoc analysis of the prompt/classifier experiments run 2026-08-01. Written
 to be honest about what the data supports, not to justify decisions already made.*

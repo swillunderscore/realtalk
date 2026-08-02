@@ -7,7 +7,7 @@ cd "$(dirname "$0")"
 python3 - <<'PY'
 import glob, re, sys
 fail = 0
-for path in sorted(glob.glob("r6/scripts/StreetTalk/*.reds")):
+for path in sorted(glob.glob("r6/scripts/RealTalk/*.reds")):
     lines = open(path).read().splitlines()
     cls, seen, gated = "", {}, False
     for i, ln in enumerate(lines):
@@ -40,7 +40,7 @@ for path in sorted(glob.glob("r6/scripts/StreetTalk/*.reds")):
         for c, f in dups:
             print(f"    {c}.{f}")
 classes = {}
-for path in sorted(glob.glob("r6/scripts/StreetTalk/*.reds")):
+for path in sorted(glob.glob("r6/scripts/RealTalk/*.reds")):
     for m in re.finditer(r"^public (?:abstract )?class (\w+)", open(path).read(), re.M):
         classes.setdefault(m.group(1), []).append(path)
 for c, ps in classes.items():

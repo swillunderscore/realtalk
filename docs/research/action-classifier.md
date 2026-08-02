@@ -12,7 +12,7 @@ design backed by a reproducible test harness that lives in this folder.
 
 What the mod ships **today** is the hand-written matcher: an NPC's reply is
 split into speech and an action *beat*, and the beat's words are matched against
-a fixed vocabulary (`ResolveIntent` in `r6/scripts/StreetTalk/StreetTalkActions.reds`).
+a fixed vocabulary (`ResolveIntent` in `r6/scripts/RealTalk/RealTalkActions.reds`).
 That works but breaks at the edges of the word list — a model that writes
 "departs" instead of "walks away" fires nothing.
 
@@ -148,7 +148,7 @@ display.
 2. each maps to the game's own (category, idle) via the table above — reuse the
    engine's values, do not invent them;
 3. the mod already drives faces through `AnimFeature_FacialReaction` with exactly
-   these category/idle fields (`StreetTalkActions.reds`), so the wiring exists.
+   these category/idle fields (`RealTalkActions.reds`), so the wiring exists.
 
 With the label set fixed to the game's 9 (Shock/Surprise and Funny/Joy scored as
 interchangeable, since they render identically), emotion classification becomes
@@ -316,8 +316,8 @@ technique (coarse-to-fine / hierarchical classification), not a novel idea.
 
 ## Related prompt findings (these ARE shipped in the mod)
 
-Measured the same way; committed to `StreetTalkPersona.reds` /
-`StreetTalkChat.reds` / `StreetTalkTarget.reds`:
+Measured the same way; committed to `RealTalkPersona.reds` /
+`RealTalkChat.reds` / `RealTalkTarget.reds`:
 
 - **Card ends with a shape, not a worked example.** The 7B handed the example
   line back verbatim 3/22 times. Shape (`"<what they say>" *<what they do>*`) →
@@ -340,7 +340,7 @@ Measured the same way; committed to `StreetTalkPersona.reds` /
 ## Two gotchas worth knowing
 
 - **Reasoning models return an empty `content`** (llama.cpp puts the text in
-  `reasoning_content`). StreetTalk reads `content`, so a reasoning model shows
+  `reasoning_content`). RealTalk reads `content`, so a reasoning model shows
   nothing. Launch with `--reasoning off --reasoning-budget 0`, or the mod looks
   broken.
 - **Sample sizes here are 22–96.** Directions reproduced across runs, but treat

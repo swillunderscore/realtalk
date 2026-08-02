@@ -2,19 +2,19 @@
 # local.conf is never committed and never shipped.
 #
 # You only need this if the server is NOT living in
-# <game>/tools/StreetTalk/ (where the release puts it and everything is
+# <game>/tools/RealTalk/ (where the release puts it and everything is
 # found automatically) - e.g. running it straight out of a source checkout.
 
 # Where Cyberpunk 2077 is installed.
-#STREETTALK_GAME_DIR="/path/to/steamapps/common/Cyberpunk 2077"
+#REALTALK_GAME_DIR="/path/to/steamapps/common/Cyberpunk 2077"
 
 # Voice CLONING needs these two. Without them the server still runs and
 # NPCs use built-in voices instead of their own.
 #   WolvenKit CLI  - reads voice lines out of your own game archives
 #   vgmstream-cli  - decodes the game's .wem audio (ffmpeg cannot)
-#STREETTALK_WOLVENKIT="/path/to/WolvenKit.CLI"
-#STREETTALK_VGMSTREAM="/path/to/vgmstream-cli"
+#REALTALK_WOLVENKIT="/path/to/WolvenKit.CLI"
+#REALTALK_VGMSTREAM="/path/to/vgmstream-cli"
 
 # Log the actual wording of NPC stage directions (used when extending the
 # animation thesaurus). Off means no conversation content is ever written.
-#export STREETTALK_LOG_CONTENT=1
+#export REALTALK_LOG_CONTENT=1

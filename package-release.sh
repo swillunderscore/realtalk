@@ -4,9 +4,9 @@
 # Layout is GAME-ROOT RELATIVE, so a mod manager (or a manual drag) puts
 # every piece where it belongs in one step:
 #
-#   r6/scripts/StreetTalk/      the mod
-#   r6/audioware/StreetTalk/    voice slots (harmless without Audioware)
-#   tools/StreetTalk/           the voice server + launchers (README path)
+#   r6/scripts/RealTalk/      the mod
+#   r6/audioware/RealTalk/    voice slots (harmless without Audioware)
+#   tools/RealTalk/           the voice server + launchers (README path)
 #
 # Deliberately EXCLUDED: the python venv, forged voices and roster (game
 # audio derived from the player's own archives - never redistributable),
@@ -15,22 +15,22 @@
 set -eu
 cd "$(dirname "$0")"
 VERSION="${1:-$(date +%Y.%m.%d)}"
-OUT="dist/StreetTalk-$VERSION.zip"
+OUT="dist/RealTalk-$VERSION.zip"
 STAGE="dist/stage"
 
 rm -rf "$STAGE" "$OUT"
-mkdir -p "$STAGE/r6/scripts" "$STAGE/r6/audioware" "$STAGE/tools/StreetTalk" dist
+mkdir -p "$STAGE/r6/scripts" "$STAGE/r6/audioware" "$STAGE/tools/RealTalk" dist
 
-cp -r r6/scripts/StreetTalk "$STAGE/r6/scripts/"
-cp -r r6/audioware/StreetTalk "$STAGE/r6/audioware/"
-cp server/streettalk-tts.py server/voice_forge.py \
-   server/npc-tts-server.sh server/streettalk-launch.sh \
-   server/sidecars.conf.example "$STAGE/tools/StreetTalk/"
+cp -r r6/scripts/RealTalk "$STAGE/r6/scripts/"
+cp -r r6/audioware/RealTalk "$STAGE/r6/audioware/"
+cp server/realtalk-tts.py server/voice_forge.py \
+   server/npc-tts-server.sh server/realtalk-launch.sh \
+   server/sidecars.conf.example "$STAGE/tools/RealTalk/"
 # FLAT, not in a windows/ subfolder: the .bat resolves the game dir as
-# ..\.. from its own location and calls streettalk-tts.py beside itself, and
-# the README's launch line points at tools\StreetTalk\streettalk-launch.bat.
+# ..\.. from its own location and calls realtalk-tts.py beside itself, and
+# the README's launch line points at tools\RealTalk\realtalk-launch.bat.
 # Both launchers coexist harmlessly; each OS ignores the other's.
-cp server/windows/streettalk-launch.bat server/windows/bootstrap.ps1 "$STAGE/tools/StreetTalk/"
+cp server/windows/realtalk-launch.bat server/windows/bootstrap.ps1 "$STAGE/tools/RealTalk/"
 cp README.md "$STAGE/"
 
 # Nothing derived from the game, and nothing machine-local, may ship.

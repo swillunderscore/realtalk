@@ -1,5 +1,5 @@
 #!/bin/bash
-# StreetTalk TTS server launcher. Run this, then launch the game.
+# RealTalk TTS server launcher. Run this, then launch the game.
 #
 # First run: creates a venv and installs coqui-tts (the maintained fork of
 # Coqui TTS; if pip can't find it, `pip install TTS` is the older name), then
@@ -11,32 +11,32 @@
 # appeared by then, and the voice follows it.
 #
 # PATHS ARE DERIVED, NOT WRITTEN DOWN. Installed, this script lives in
-# <game>/tools/StreetTalk/, so the game is two levels up - which is how the
+# <game>/tools/RealTalk/, so the game is two levels up - which is how the
 # release works with zero configuration. That derivation is also VERIFIED
 # rather than assumed: it broke a dev checkout, where ../.. is the source
 # repo and not a game at all (field-caught - TTS died with "slot dir
 # missing"). If it does not look like a Cyberpunk install, fall back to
-# local.conf / STREETTALK_GAME_DIR, and say so clearly instead of failing
+# local.conf / REALTALK_GAME_DIR, and say so clearly instead of failing
 # on a path nobody wrote.
 
 DIR="$(cd "$(dirname "$0")" && pwd)"
 
-# Machine-local overrides, never committed: STREETTALK_GAME_DIR,
-# STREETTALK_WOLVENKIT, STREETTALK_VGMSTREAM (see local.conf.example).
+# Machine-local overrides, never committed: REALTALK_GAME_DIR,
+# REALTALK_WOLVENKIT, REALTALK_VGMSTREAM (see local.conf.example).
 if [ -f "$DIR/local.conf" ]; then
     . "$DIR/local.conf"
 fi
 
-looks_like_game() { [ -d "$1/r6/audioware/StreetTalk/slots" ]; }
+looks_like_game() { [ -d "$1/r6/audioware/RealTalk/slots" ]; }
 
-GAME_DIR="${STREETTALK_GAME_DIR:-}"
+GAME_DIR="${REALTALK_GAME_DIR:-}"
 if [ -z "$GAME_DIR" ]; then
     CANDIDATE="$(cd "$DIR/../.." 2>/dev/null && pwd)"
     if [ -n "$CANDIDATE" ] && looks_like_game "$CANDIDATE"; then
         GAME_DIR="$CANDIDATE"
     fi
 fi
-GAME_SLOTS="$GAME_DIR/r6/audioware/StreetTalk/slots"
+GAME_SLOTS="$GAME_DIR/r6/audioware/RealTalk/slots"
 VENV="$DIR/.venv"
 
 export COQUI_TOS_AGREED=1   # XTTS asks once; non-interactive servers must pre-agree
@@ -44,8 +44,8 @@ export COQUI_TOS_AGREED=1   # XTTS asks once; non-interactive servers must pre-a
 if [ -z "$GAME_DIR" ] || [ ! -d "$GAME_SLOTS" ]; then
     echo "[ERROR] Could not find your Cyberpunk 2077 install."
     echo "        Expected the mod's audio slots at:"
-    echo "          <game>/r6/audioware/StreetTalk/slots"
-    echo "        Either keep this script in <game>/tools/StreetTalk/ (the"
+    echo "          <game>/r6/audioware/RealTalk/slots"
+    echo "        Either keep this script in <game>/tools/RealTalk/ (the"
     echo "        release layout), or set the path yourself - copy"
     echo "        local.conf.example to local.conf and edit it."
     exit 1
@@ -83,14 +83,14 @@ fi
 
 # Voice FORGING needs two external tools (WolvenKit CLI to read your
 # archives, vgmstream to decode .wem). The Windows launcher downloads them;
-# on Linux, point at your own copies with STREETTALK_WOLVENKIT /
-# STREETTALK_VGMSTREAM, drop them beside this script, or leave them out -
+# on Linux, point at your own copies with REALTALK_WOLVENKIT /
+# REALTALK_VGMSTREAM, drop them beside this script, or leave them out -
 # without them the server still runs and everyone gets a built-in voice
 # instead of their own cloned one.
-WOLVENKIT="${STREETTALK_WOLVENKIT:-}"
+WOLVENKIT="${REALTALK_WOLVENKIT:-}"
 [ -z "$WOLVENKIT" ] && [ -x "$DIR/wolvenkit/WolvenKit.CLI" ] && WOLVENKIT="$DIR/wolvenkit/WolvenKit.CLI"
 [ -z "$WOLVENKIT" ] && WOLVENKIT="$(command -v WolvenKit.CLI 2>/dev/null || true)"
-VGMSTREAM="${STREETTALK_VGMSTREAM:-}"
+VGMSTREAM="${REALTALK_VGMSTREAM:-}"
 [ -z "$VGMSTREAM" ] && [ -x "$DIR/vgmstream/vgmstream-cli" ] && VGMSTREAM="$DIR/vgmstream/vgmstream-cli"
 [ -z "$VGMSTREAM" ] && VGMSTREAM="$(command -v vgmstream-cli 2>/dev/null || true)"
 if [ -z "$WOLVENKIT" ] || [ -z "$VGMSTREAM" ]; then
@@ -103,7 +103,7 @@ fi
 # the survivor serves STALE CODE with its output going to a rotated-away log
 # (field-caught: a server from 16:46 was still answering an evening session).
 # One server, always the newest code:
-pkill -f "streettalk-tts.py" 2>/dev/null && sleep 1
+pkill -f "realtalk-tts.py" 2>/dev/null && sleep 1
 
 # XTTS-v2 model weights are published by Coqui under the Coqui Public Model
 # License (non-commercial). The library downloads them from Hugging Face on
@@ -112,7 +112,7 @@ pkill -f "streettalk-tts.py" 2>/dev/null && sleep 1
 echo "[tts] first run downloads the XTTS-v2 voice model (Coqui Public Model License, non-commercial use)"
 export COQUI_TOS_AGREED=1
 
-exec "$VENV/bin/python" "$DIR/streettalk-tts.py" \
+exec "$VENV/bin/python" "$DIR/realtalk-tts.py" \
     --slots "$GAME_SLOTS" \
     --voices "$DIR/voices" \
     --port 8082 \
