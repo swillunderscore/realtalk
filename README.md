@@ -83,19 +83,46 @@ cause.
 
 ## Get a model
 
-The mod talks to any **OpenAI-compatible** server. It doesn't ship a model
-(they're gigabytes with their own licenses) — you point it at one.
+The mod doesn't ship a model — you run one locally and it connects. **You don't
+type an endpoint or edit files for this:** Mod Settings → **Server** is a
+dropdown. Install one of the programs below, start it, pick its name in the
+dropdown, and the address is filled in for you.
 
-- **Cloud, quickest:** pick **OpenRouter** in Mod Settings → Server, put your
-  key and a model id in `r6\scripts\StreetTalk\StreetTalkConfig.reds`. No
-  downloads, no launch options. Tradeoff: your chats go to their servers.
-- **Local, private:** install [LM Studio](https://lmstudio.ai) or
-  [Ollama](https://ollama.com), download a model, start the server, and pick it
-  in Mod Settings → Server. The address fills in for you.
+| Program | Ease | Pick in dropdown |
+|---|---|---|
+| [KoboldCpp](https://github.com/LostRuins/koboldcpp) | **easiest on Windows** — one .exe, load a model, go | KoboldCpp |
+| [LM Studio](https://lmstudio.ai) | easy, nice UI | LM Studio |
+| [Ollama](https://ollama.com) | easy, command-line | Ollama |
+| [llama.cpp](https://github.com/ggml-org/llama.cpp) | most control, most manual | llama.cpp |
 
-**Recommended:** *Dan's Personality Engine 7B, Q5_K_M* (~5 GB) — search
-`7b-m-dans-personalityengine-v1.2.1-rc-5-GGUF` on Hugging Face. Any instruct
-model works; character-tuned ones sound far less like a chatbot in a trenchcoat.
+Each program's own quick-start (linked above) gets it running and serving a
+model — that's the part their docs cover. All you bring back here is **which one
+it is**, in the dropdown. Only two cases need the config file
+(`r6\scripts\StreetTalk\StreetTalkConfig.reds`): **OpenRouter** (cloud — put an
+API key + model id there, no download, no `-no-tls`), and a **non-default port**
+(the presets assume each program's standard port; if you changed it, pick
+**Custom** and set the URL).
+
+**Recommended model:** *Dan's Personality Engine 7B, Q5_K_M* (~5 GB) — search
+`7b-m-dans-personalityengine-v1.2.1-rc-5-GGUF` on Hugging Face, load it in
+whichever program you chose. Any instruct model works; character-tuned ones
+sound far less like a chatbot in a trenchcoat.
+
+<details>
+<summary>Start the model automatically with the game (no separate window)</summary>
+
+By default you start your model program yourself, then launch the game. If you'd
+rather it start and stop *with* the game, the same launcher used for voice reads
+a `server/sidecars.conf` — one shell command per line. Put your model server's
+command there (e.g. your `koboldcpp ...` or `llama-server ...` line) and it
+starts when the game does and stops when you quit. This is the "seamless" setup;
+it's optional and for people comfortable with a command line. See the **Voice**
+section for the launcher line itself.
+
+Note the mod's redscript can't start a program on its own (mods are sandboxed) —
+this launcher, invoked from your Steam launch options, is the mechanism, which
+is why no in-game "start server" button is possible.
+</details>
 
 <details>
 <summary>Hardware — the model shares your GPU with the game</summary>
