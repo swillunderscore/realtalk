@@ -41,6 +41,19 @@ public class StChatRequestDTO extends IScriptable {
     public let stream: Bool;
 }
 
+// The second-pass classifier request. Separate DTO so the "grammar" field is
+// ONLY sent on classify calls, never on the generation call (which must not be
+// constrained). grammar is honoured by llama.cpp and KoboldCpp and ignored by
+// other OpenAI-compatible servers; the answer is validated either way.
+public class StClassifyRequestDTO extends IScriptable {
+    public let model: String;
+    public let messages: array<ref<StChatMessageDTO>>;
+    public let max_tokens: Int32;
+    public let temperature: Float;
+    public let stream: Bool;
+    public let grammar: String;
+}
+
 // On-disk shape for a saved conversation. Field name becomes the JSON key.
 public class StChatFileDTO extends IScriptable {
     public let lines: array<ref<StChatMessageDTO>>;
@@ -275,6 +288,12 @@ public class StChat extends ScriptableSystem {
     private let activeDirection: String;
     private let pendingAnim: CName;
     private let pendingAsk: String;
+
+    // Held between firing the classifier and its reply landing.
+    private let pendingClassNpc: wref<NPCPuppet>;
+    private let pendingClassBeat: String;
+    private let pendingClassSpeech: String;
+    private let pendingClassAsked: String;
 
     // Kept so the character card can be REBUILT the moment a biography
     // arrives - the card is the only thing the model ever sees, so a bio that
@@ -1585,6 +1604,80 @@ public class StChat extends ScriptableSystem {
         }
     }
 
+    // Fire the second-pass classifier: the beat in, one action id out.
+    public func ClassifyBeat(beat: String) -> Void {
+        let settings = RealTalkSettings.Get();
+        let cfg = RealTalkConfig.Get();
+        if !IsDefined(settings) || !IsDefined(cfg) {
+            return;
+        }
+        let req = new StClassifyRequestDTO();
+        req.model = cfg.customModel;
+        req.max_tokens = 12;
+        req.temperature = 0.0;
+        req.stream = false;
+        req.grammar = StActions.ClassifierGrammar();
+        let sys = new StChatMessageDTO();
+        sys.role = "system";
+        sys.content = StActions.ClassifierMenu();
+        let usr = new StChatMessageDTO();
+        usr.role = "user";
+        usr.content = beat;
+        ArrayPush(req.messages, sys);
+        ArrayPush(req.messages, usr);
+        let headers: array<HttpHeader>;
+        ArrayPush(headers, HttpHeader.Create("Content-Type", "application/json"));
+        if StrLen(cfg.customApiKey) > 0 {
+            ArrayPush(headers, HttpHeader.Create("Authorization", "Bearer " + cfg.customApiKey));
+        }
+        AsyncHttpClient.Post(HttpCallback.Create(this, n"OnClassified"),
+                             settings.GetEndpoint(), ToJson(req).ToString(), headers);
+    }
+
+    private cb func OnClassified(response: ref<HttpResponse>) -> Void {
+        let npc = this.pendingClassNpc;
+        if !IsDefined(npc) || !IsDefined(this.actions) {
+            return;
+        }
+        // ANY classifier failure falls back to the word-matcher, so a backend
+        // that rejects the grammar field (or is just down) still gets actions.
+        if !IsDefined(response) || NotEquals(response.GetStatus(), HttpStatus.OK) {
+            StLog("classifier: call failed - falling back to the word matcher");
+            this.actions.ApplyIntentAsked(npc, this.pendingClassBeat,
+                                          this.pendingClassSpeech, this.pendingClassAsked);
+            return;
+        }
+        let id: String = "";
+        let json = response.GetJson();
+        if IsDefined(json) && !json.IsUndefined() {
+            let root = json as JsonObject;
+            if IsDefined(root) {
+                let choices = root.GetKey("choices") as JsonArray;
+                if IsDefined(choices) && choices.GetSize() > 0u {
+                    let msg = (choices.GetItem(0u) as JsonObject).GetKey("message") as JsonObject;
+                    if IsDefined(msg) {
+                        id = msg.GetKeyString("content");
+                    }
+                }
+            }
+        }
+        let intent: String = StActions.MapClassId(id);
+        if StrLen(intent) > 0 {
+            StLog(s"classifier: beat -> \(id)");
+            this.actions.DispatchIntent(npc, intent);
+            return;
+        }
+        // Beat classified as nothing mechanical. Fall to the asked-agreement:
+        // "follow me" / "yeah alright" with no acted beat.
+        StLog(s"classifier: beat -> none (\(id))");
+        if StrLen(this.pendingClassAsked) > 0
+            && StActions.IsAffirmative(this.pendingClassSpeech)
+            && !StActions.IsQuestion(this.pendingClassSpeech) {
+            StLog(s"classifier: falling to agreement on '\(this.pendingClassAsked)'");
+            this.actions.DispatchIntent(npc, this.pendingClassAsked);
+        }
+    }
+
     private cb func OnReply(response: ref<HttpResponse>) -> Void {
         this.busy = false;
         let settings = RealTalkSettings.Get();
@@ -1685,10 +1778,23 @@ public class StChat extends ScriptableSystem {
         if IsDefined(settings) && settings.npcActions && IsDefined(this.activeNpc) && IsDefined(this.actions) {
             this.actions.BeginReply();
             text = this.actions.Apply(this.activeNpc, text);
-            // The beat's own words, resolved into an action. Runs after tag
-            // execution so an explicit tag always wins over an inference.
-            this.actions.ApplyIntentAsked(this.activeNpc, this.activeDirection,
-                                          text, this.pendingAsk);
+            // THE ACTION FROM THE BEAT. With Smart Actions on and a beat to
+            // read, a second model call classifies it (see OnClassified);
+            // otherwise the hand-written word-matcher runs. Either way explicit
+            // [tags] above already won.
+            if IsDefined(settings) && settings.smartActions
+                && StrLen(this.activeDirection) > 3 {
+                this.pendingClassNpc = this.activeNpc;
+                this.pendingClassBeat = this.activeDirection;
+                this.pendingClassSpeech = text;
+                this.pendingClassAsked = this.pendingAsk;
+                this.ClassifyBeat(this.activeDirection);
+            } else {
+                // No beat (asked-agreement still handled here), or classifier
+                // off -> the word-matcher.
+                this.actions.ApplyIntentAsked(this.activeNpc, this.activeDirection,
+                                              text, this.pendingAsk);
+            }
             this.pendingAsk = "";
         }
 

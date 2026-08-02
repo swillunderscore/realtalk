@@ -1203,7 +1203,15 @@ public class StActions extends IScriptable {
                 StLog(s"intent: asked to '\(asked)' - reply did not read as agreement");
             }
         }
-        if StrLen(intent) == 0 {
+        this.DispatchIntent(npc, intent);
+    }
+
+    // One place every action path lands: the word-matcher, the asked-agreement,
+    // AND the LLM classifier (RealTalkChat.OnClassified) all end here with a
+    // resolved intent string. Kept separate so the classifier does not have to
+    // reimplement the dispatch.
+    public func DispatchIntent(npc: ref<NPCPuppet>, intent: String) -> Void {
+        if !IsDefined(npc) || npc.IsDead() || StrLen(intent) == 0 {
             return;
         }
         // Walking out ON you is a decision, not a contradiction: someone who
@@ -1214,7 +1222,7 @@ public class StActions extends IScriptable {
             StLog("intent: they are done following you");
             this.StopFollowing(npc);
         }
-        StLog(s"intent: beat resolved to \(intent)");
+        StLog(s"intent: \(intent)");
         if Equals(intent, "stop") {
             this.StopFollowing(npc);
             return;
@@ -2790,7 +2798,57 @@ public class StActions extends IScriptable {
 
     // Cheats only - run an intent with nobody asked and nobody agreeing.
     public func RunIntent(npc: ref<NPCPuppet>, intent: String) -> Void {
-        this.ApplyIntentAsked(npc, intent, "", "");
+        this.DispatchIntent(npc, intent);
+    }
+
+    // ---- THE LLM CLASSIFIER (see docs/research/action-classifier.md) --------
+    // The second-pass design, now shipped. RealTalkChat makes the actual model
+    // call; these three static helpers are the shared menu, grammar, and id
+    // mapping so both sides agree. Ids follow the measured naming rules:
+    // direction lives in the id (hand_over_weapon), and "none" is always an
+    // option so flavour beats fire nothing.
+    public static func ClassifierMenu() -> String {
+        return "You label a line of stage direction from a roleplay game with the one"
+            + " physical action it shows the character doing, if any.\n\nActions:\n"
+            + "follow: goes with V, walks with V\n"
+            + "stay_here: stops following, waits, holds position\n"
+            + "leave: walks off, ends the conversation\n"
+            + "run: flees, runs away\n"
+            + "step_back: backs off, gives V space\n"
+            + "step_closer: comes nearer to V\n"
+            + "drop_item: drops or puts down what they are holding\n"
+            + "holster: puts their weapon away\n"
+            + "hand_over_weapon: gives their weapon to V\n"
+            + "attack: opens fire, stabs, lunges, starts a fight\n"
+            + "stand_down: stops fighting, lowers their weapon, calms down\n"
+            + "none: anything else - a look, a gesture, an expression, just talking"
+            + "\n\nMost stage directions are flavour and match nothing here. Answer"
+            + " 'none' unless the line clearly shows one of the actions above. Answer"
+            + " with the id alone. One word, nothing else.";
+    }
+
+    public static func ClassifierGrammar() -> String {
+        return "root ::= \"follow\" | \"stay_here\" | \"leave\" | \"run\""
+            + " | \"step_back\" | \"step_closer\" | \"drop_item\" | \"holster\""
+            + " | \"hand_over_weapon\" | \"attack\" | \"stand_down\" | \"none\"";
+    }
+
+    // classifier id -> the intent string DispatchIntent understands. "" = no
+    // action (none, or an unrecognised answer).
+    public static func MapClassId(id: String) -> String {
+        let x: String = StrLower(StActions.TrimEnds(id));
+        if Equals(x, "follow") { return "follow"; }
+        if Equals(x, "stay_here") { return "stop"; }
+        if Equals(x, "leave") { return "leave"; }
+        if Equals(x, "run") { return "run"; }
+        if Equals(x, "step_back") { return "back"; }
+        if Equals(x, "step_closer") { return "closer"; }
+        if Equals(x, "drop_item") { return "drop"; }
+        if Equals(x, "holster") { return "holster"; }
+        if Equals(x, "hand_over_weapon") { return "handover"; }
+        if Equals(x, "attack") { return "attack"; }
+        if Equals(x, "stand_down") { return "standdown"; }
+        return "";
     }
 
     public func Disarm(npc: ref<NPCPuppet>) -> Bool {

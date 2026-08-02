@@ -237,6 +237,12 @@ public class RealTalkSettings extends ScriptableSystem {
     public let npcActions: Bool = true;
 
     @runtimeProperty("ModSettings.mod", "Real Talk")
+    @runtimeProperty("ModSettings.category", "Conversation")
+    @runtimeProperty("ModSettings.displayName", "Smart Actions (2nd model call)")
+    @runtimeProperty("ModSettings.description", "How the mod reads what an NPC did. ON: a second, tiny model call classifies their action - handles phrasings a word list would miss ('departs', 'tags along'). Costs one extra call per reply (~0.1s local; a second billed call on a cloud provider). OFF: a fast built-in word matcher, no extra call. Needs NPC Actions.")
+    public let smartActions: Bool = true;
+
+    @runtimeProperty("ModSettings.mod", "Real Talk")
     @runtimeProperty("ModSettings.category", "Voice")
     @runtimeProperty("ModSettings.displayName", "Spoken Replies (TTS)")
     @runtimeProperty("ModSettings.description", "NPC replies are spoken aloud, in a cloned voice, from where the NPC is standing. Needs the Audioware mod AND the RealTalk TTS server running (see README). Text appears immediately either way; the voice follows a few seconds later.")
