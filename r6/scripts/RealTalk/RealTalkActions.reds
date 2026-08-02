@@ -826,6 +826,12 @@ public class StActions extends IScriptable {
         // FOLLOWING FROM A BEAT. Was ask-only, so "Panam nods and follows V"
         // (a beat, not an agreement to a request) fired nothing. Explicit
         // narration of following is a strong enough signal to act on.
+        if StActions.Did(b, "stands down") || StActions.Did(b, "backs down")
+            || StActions.Did(b, "eases off") || StActions.Did(b, "lowers her guard")
+            || StActions.Did(b, "lowers his guard") || StActions.Did(b, "calms down")
+            || StActions.Did(b, "stops fighting") {
+            return "standdown";
+        }
         if StActions.Did(b, "follows") || StActions.Did(b, "goes with")
             || StActions.Did(b, "walks with") || StActions.Did(b, "falls in beside")
             || StActions.Did(b, "keeps pace") || StActions.Did(b, "trails after")
@@ -1028,6 +1034,22 @@ public class StActions extends IScriptable {
             || StrContains(t, "drop him") || StrContains(t, "drop her")
             || StrContains(t, "end him") || StrContains(t, "off him") {
             return "attack";
+        }
+        // CALL OFF A FIGHT. Tested here, after attack, so "shoot him" is not
+        // read as a stand-down; these phrasings are unambiguous about ending
+        // it. (Field report: could not tell her to stop once she started.)
+        if StrContains(t, "stand down") || StrContains(t, "stop fighting")
+            || StrContains(t, "stop shooting") || StrContains(t, "hold your fire")
+            || StrContains(t, "cease fire") || StrContains(t, "ceasefire")
+            || StrContains(t, "at ease") || StrContains(t, "it's over")
+            || StrContains(t, "its over") || StrContains(t, "fight's over")
+            || StrContains(t, "we're done") || StrContains(t, "were done")
+            || StrContains(t, "enough") || StrContains(t, "chill")
+            || StrContains(t, "calm down") || StrContains(t, "ease up")
+            || StrContains(t, "leave them") || StrContains(t, "let him go")
+            || StrContains(t, "let her go") || StrContains(t, "he's dead")
+            || StrContains(t, "hes dead") || StrContains(t, "she's dead") {
+            return "standdown";
         }
         return "";
     }
@@ -1241,6 +1263,16 @@ public class StActions extends IScriptable {
         }
         if Equals(intent, "attack") {
             this.Attack(npc);
+            return;
+        }
+        if Equals(intent, "standdown") {
+            // Only if she is ACTUALLY fighting. "he's dead" and "chill" are
+            // stand-down phrasings, but said to a calm NPC they should do
+            // nothing rather than make her lower a weapon she never drew.
+            if this.IsUnderOrders(npc) || npc.IsAggressive()
+                || Equals(npc.GetHighLevelStateFromBlackboard(), gamedataNPCHighLevelState.Combat) {
+                this.StandDown(npc, "asked to stand down");
+            }
             return;
         }
         if Equals(intent, "post") {
