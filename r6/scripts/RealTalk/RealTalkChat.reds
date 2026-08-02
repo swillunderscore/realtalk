@@ -1669,7 +1669,7 @@ public class StChat extends ScriptableSystem {
         // direction the persona asks for, and it drives the animation and
         // facial pick. Harvest it FIRST, then reduce the message to the
         // spoken words for display, voice, and history.
-        this.activeDirection = StActions.ExtractDirection(text);
+        this.activeDirection = StActions.ExtractDirection(text, this.activeName);
         // A beat is a few words. Anything longer is prose the game cannot act
         // out, and storing it teaches the model to write more of it - so it is
         // cut here, before it reaches history or the animation search.
@@ -1677,7 +1677,7 @@ public class StChat extends ScriptableSystem {
             this.activeDirection = StrLeft(this.activeDirection, 90);
         }
         this.pendingAnim = n"";
-        text = StActions.CleanProse(text);
+        text = StActions.CleanProse(text, this.activeName);
 
         // Act on any tags before the text is shown or stored - the cleaned
         // reply is what goes in history, so tags never feed back into context

@@ -711,9 +711,16 @@ public class StActions extends IScriptable {
     // anywhere (so "Sure." [FOLLOW] I nod. still follows), drop the rest.
     // Asterisk *actions* go unconditionally. Deterministic cleanup beats
     // prompt hope; the prompt ALSO forbids it (RealTalkPersona.reds).
-    public static func CleanProse(text: String) -> String {
+    public static func CleanProse(text: String, opt speaker: String) -> String {
         // curly quotes normalise first - models emit both
         let t: String = StrReplaceAll(StrReplaceAll(text, "\u{201C}", "\""), "\u{201D}", "\"");
+        // Pure narration ("Panam nods and follows V") has no spoken words at
+        // all - returning it here would make her SAY the stage direction. It
+        // becomes an action line instead (see the caller).
+        if StrFindFirst(t, "\"") == -1 && StrFindFirst(t, "*") == -1
+            && StActions.LooksLikeNarration(t, speaker) {
+            return "";
+        }
         // strip *action* spans
         let noStars: String = "";
         let rest: String = t;
@@ -816,6 +823,15 @@ public class StActions extends IScriptable {
             return "";
         }
         // Running is also leaving, so it is tested first.
+        // FOLLOWING FROM A BEAT. Was ask-only, so "Panam nods and follows V"
+        // (a beat, not an agreement to a request) fired nothing. Explicit
+        // narration of following is a strong enough signal to act on.
+        if StActions.Did(b, "follows") || StActions.Did(b, "goes with")
+            || StActions.Did(b, "walks with") || StActions.Did(b, "falls in beside")
+            || StActions.Did(b, "keeps pace") || StActions.Did(b, "trails after")
+            || StActions.Did(b, "sets off after") {
+            return "follow";
+        }
         if StActions.Did(b, "runs") || StActions.Did(b, "bolts")
             || StActions.Did(b, "flees") || StActions.Did(b, "sprints")
             || StActions.Did(b, "hurries off") || StActions.Did(b, "hurries away")
@@ -1371,9 +1387,42 @@ public class StActions extends IScriptable {
     // *asterisk* span), which is the model's stage direction - "I say,
     // looking the stranger over" - and exactly the search text the
     // animation picker wants. Bracket tags are actions, not directions.
-    public static func ExtractDirection(text: String) -> String {
+    // Bare third-person narration - "Panam nods and follows V out of the
+    // building" - with NO quotes and NO asterisks. The model broke format and
+    // wrote a stage direction as if it were the whole line. It reads as the
+    // character acting, so it should be treated as a beat, not spoken aloud in
+    // their own voice (field report: "Panam nods and follows V" came out as
+    // her spoken dialogue and no follow fired).
+    public static func LooksLikeNarration(text: String, speaker: String) -> Bool {
+        let low: String = StrLower(StActions.TrimEnds(text));
+        if StrLen(low) == 0 {
+            return false;
+        }
+        // Starts with the character's own name.
+        if StrLen(speaker) > 0 {
+            let first: String = StrLower(speaker);
+            let sp: Int32 = StrFindFirst(first, " ");
+            if sp != -1 {
+                first = StrLeft(first, sp);
+            }
+            if StrLen(first) > 1 && StrBeginsWith(low, first + " ") {
+                return true;
+            }
+        }
+        // ...or with a third-person subject.
+        return StrBeginsWith(low, "she ") || StrBeginsWith(low, "he ")
+            || StrBeginsWith(low, "they ") || StrBeginsWith(low, "her ")
+            || StrBeginsWith(low, "his ") || StrBeginsWith(low, "their ");
+    }
+
+    public static func ExtractDirection(text: String, opt speaker: String) -> String {
         let t: String = StrReplaceAll(StrReplaceAll(text, "\u{201C}", "\""), "\u{201D}", "\"");
         if StrFindFirst(t, "\"") == -1 {
+            // No quotes AND it reads as narration -> the WHOLE thing is the
+            // beat, even without asterisks.
+            if StrFindFirst(t, "*") == -1 && StActions.LooksLikeNarration(t, speaker) {
+                return StActions.StripTags(t);
+            }
             // NO QUOTES, BUT ASTERISKS: this is narration and nothing else -
             // "*Panam pulls the trigger, the bullet drops him*" is a whole
             // reply the model really wrote. It used to be thrown away twice
