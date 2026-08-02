@@ -109,19 +109,29 @@ whichever program you chose. Any instruct model works; character-tuned ones
 sound far less like a chatbot in a trenchcoat.
 
 <details>
-<summary>Start the model automatically with the game (no separate window)</summary>
+<summary>Start the model automatically with the game</summary>
 
-By default you start your model program yourself, then launch the game. If you'd
-rather it start and stop *with* the game, the same launcher used for voice reads
-a `server/sidecars.conf` — one shell command per line. Put your model server's
-command there (e.g. your `koboldcpp ...` or `llama-server ...` line) and it
-starts when the game does and stops when you quit. This is the "seamless" setup;
-it's optional and for people comfortable with a command line. See the **Voice**
-section for the launcher line itself.
+You normally start your model program yourself and leave it running —
+KoboldCpp, LM Studio and Ollama all keep serving in the background, so you start
+them once and forget about them. That's the simplest setup and it's fine.
 
-Note the mod's redscript can't start a program on its own (mods are sandboxed) —
-this launcher, invoked from your Steam launch options, is the mechanism, which
-is why no in-game "start server" button is possible.
+**Linux/Proton** can go one step further: the launcher (see **Voice**) reads
+`server/sidecars.conf`, one shell command per line, and starts/stops those
+*with the game*. Add your model server's line and the Play button does
+everything:
+
+```
+npc-tts-server.sh
+/path/to/koboldcpp --model /path/to/model.gguf --port 5001
+```
+
+**Windows** doesn't auto-start the model yet — the Windows launcher starts only
+the voice server. Start your model program yourself (leave the window open). If
+you'd like real auto-start on Windows, it's a wanted feature; open an issue.
+
+Either way the mod's redscript can't launch a program itself (mods are
+sandboxed), so this launcher — run from your Steam launch options — is the only
+auto-start mechanism, which is why there's no in-game "start server" button.
 </details>
 
 <details>
