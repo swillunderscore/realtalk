@@ -1,0 +1,4 @@
+GAME'S 9 EMOTIONS: 40/41 = 97.6%   95% CI [87.4, 99.6]
+(funny==joy and shock==surprise scored as one face each)
+  'clenches her fists' -> wanted aggressive, got neutral
+DONE

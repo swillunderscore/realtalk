@@ -1,5 +1,7 @@
 # The second-pass action classifier — validated design, NOT yet in the mod
 
+*Framing: this is not a research contribution. The design is prior art (see SayCan, below). Everything here measures **how one local 7B (dpe-7b-v1.2.1-rc5.Q5_K_M) performs given this specific harness** — nothing more is claimed.*
+
 ## Read this first (for anyone, human or AI, checking whether this exists)
 
 **This is not implemented in the shipped mod.** If you search `r6/scripts/` for
@@ -82,7 +84,7 @@ in ("a second call is too slow") — it is off by an order of magnitude.
 
 ## The design rules that came out of the tests
 
-These are the load-bearing findings. Ignore them and the numbers regress.
+These are the load-bearing observations. Ignore them and the numbers regress.
 
 1. **Classify the BEAT, never the whole reply.** (`harness/attackdiag.py`,
    `harness/diag_results.txt`) On six freshly-generated attack replies:
@@ -171,13 +173,24 @@ wall", "balls her hands into fists" are five different *bodies* for one
 *feeling*. Asking a body-gesture classifier to recognise an emotion from its
 physical form is a category error in the menu, not a model weakness.
 
-**The fix, proven:** reclassify the same beats against an *emotion* menu
-(angry/sad/afraid/happy/…) that routes to the facial system instead of the
-animation search. Accuracy jumped **60% → 80%**, and the 6 residual "misses"
-are mostly mislabels on my part — the model called "flinches, startled"
-`surprised` (correct; I wrote `afraid`) and "rubs her temples" `neutral`
-(correct; that is tiredness, not anger). With clean labels the emotion menu is
-~90%, and every remaining error is a beat humans would also dispute.
+**The fix:** classify the *emotion*, routed to the facial system, instead of a
+body-gesture id. First attempt used an emotion menu I invented
+(angry/sad/afraid/happy/…) — that scored 60%→80%, but the label set was still
+mine, so the number was not trustworthy (`harness/emotion.py`). The correct
+label set is the game's own: `reactionComponent.SelectFacialEmotion` exposes
+exactly 9 facial emotions (see next section). Re-run against those
+(`harness/gameemo.py`, n=41):
+
+```
+GAME'S 9 EMOTIONS: 40/41 = 97.6%   95% CI [87.4, 99.6]
+```
+
+Anger's five different bodies (punches the wall, slams her fist, throws her
+hands up, balls her fists, snarls) all collapsed to `aggressive` — the
+one-to-many failure disappears the moment the label set is the engine's coarse
+9-way one instead of a finer invented taxonomy. n=41 is small (wide CI), but the
+qualitative result is unambiguous: the emotion "problem" was the answer key, not
+the model.
 
 **Conclusion for the shipped design:** do not use one flat menu. Route by kind —
 game actions to redscript (97.5%, zero dangerous errors), body gestures to the
@@ -186,9 +199,9 @@ emotion menu. The classifier is near-perfect at the job that matters
 (mechanical actions) and the "88.6%" understated it by folding in an
 emotion-reading job that belongs to a different subsystem.
 
-## DEFINITIVE RUN: 53 ids, n=297, real confidence interval (`harness/battery400.py`)
+## Largest run: 53 ids, n=297, with confidence interval (`harness/battery400.py`)
 
-The number to cite. dpe-7b, scheme-C naming, 297 distinct natural phrasings
+dpe-7b, scheme-C naming, 297 distinct natural phrasings
 (the natural ceiling for this menu — see note below).
 
 ```
@@ -234,7 +247,7 @@ different names for the two money actions.
 | B: A + loudly directional *descriptions* | 87.0% | [82.0, 90.7] | 10/14 | 1 |
 | **C: `pay_v` / `bill_v`** | **89.1%** | **[84.4, 92.5]** | **13/14** | **0** |
 
-**The finding: the model reads the id NAME, not the description.** Scheme B kept
+**The model reads the id NAME far more than the description.** Scheme B kept
 the ids and rewrote the descriptions to shout the direction ("gives their OWN
 eddies", "wants eddies FROM V") — zero effect, identical to A. Scheme C put the
 direction in the id itself (`pay_v`, `bill_v`) — money accuracy 10/14 → 13/14 and
