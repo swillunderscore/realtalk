@@ -1,0 +1,36 @@
+battery: 297 cases, 53 target ids
+
+STRICT  263/297 = 88.6%   95% CI [84.4, 91.7]
+LENIENT 269/297 = 90.6%   95% CI [86.7, 93.4]
+money 19/20   false-game-action-from-nonaction 0   median 77 ms   26s
+
+misses (28):
+  'settles in to wait' -> wanted stay_here, got none
+  'sidles up to V' -> wanted step_closer, got sit
+  'rubs her fingers together expectantly' -> wanted bill_v, got none
+  'slouches against the railing' -> wanted lean, got none
+  'weighs it up' -> wanted think, got none
+  'sprawls on the couch' -> wanted lie_down, got none
+  'throws her hands up' -> wanted angry_gesture, got none
+  'clenches her fists' -> wanted angry_gesture, got clap
+  'slams her fist on the table' -> wanted angry_gesture, got none
+  'punches the wall' -> wanted angry_gesture, got pray
+  'balls her hands into fists' -> wanted angry_gesture, got frown
+  'sips her whiskey' -> wanted drink, got sit
+  'arches her back' -> wanted stretch, got none
+  'presses against the wall' -> wanted take_cover, got none
+  'glances over her shoulder' -> wanted look_around, got none
+  'sweeps the room with her eyes' -> wanted look_around, got none
+  'puts her face in her hands' -> wanted facepalm, got fold_hands
+  'pinches the bridge of her nose' -> wanted facepalm, got think
+  'rubs her temples' -> wanted facepalm, got think
+  'eyes wide with fear' -> wanted scared, got none
+  'winks at V' -> wanted flirt, got warm_hands
+  'hangs her head' -> wanted sad, got none
+  'stares at the floor, deflated' -> wanted sad, got none
+  'looks crushed' -> wanted sad, got none
+  'laces her fingers' -> wanted fold_hands, got none
+  'her face darkens' -> wanted frown, got none
+  'knits her brow' -> wanted frown, got raise_eyebrow
+  'exhales heavily' -> wanted sigh, got none
+DONE
