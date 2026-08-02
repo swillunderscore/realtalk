@@ -1,0 +1,10 @@
+EMOTION BATTERY vs GAME'S 9   n=113
+  STRICT  104/113 = 92.0%   95% CI [85.6, 95.8]
+  LENIENT 110/113 = 97.3%   95% CI [92.5, 99.1]
+  (funny==joy, shock==surprise scored as one face each)
+
+misses (3):
+  'spits on the ground, seething' -> wanted aggressive, got disgust
+  'whimpers' -> wanted fear, got sad
+  'gags' -> wanted disgust, got neutral
+DONE
