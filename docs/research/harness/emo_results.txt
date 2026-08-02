@@ -1,0 +1,8 @@
+EMOTION MENU: 24/30 = 80%  (was 60% as gestures)
+  'throws her hands up' -> wanted angry, got disgusted
+  'flinches back, startled' -> wanted afraid, got surprised
+  'pinches the bridge of her nose' -> wanted angry, got neutral
+  'rubs her temples' -> wanted angry, got neutral
+  'knits her brow' -> wanted angry, got neutral
+  'frowns' -> wanted angry, got disgusted
+DONE

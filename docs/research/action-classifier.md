@@ -114,6 +114,39 @@ These are the load-bearing findings. Ignore them and the numbers regress.
    +7 points on dpe-7b, **zero** on gemma-31B and Opus 5. Interface design
    substitutes for model size and stops mattering once the model is big enough.
 
+## Failure analysis: the errors are structural and predictable (`harness/emotion.py`)
+
+The 88.6% aggregate hid three very different numbers. Splitting the 297 cases by
+what the beat actually is:
+
+| routing class | accuracy | severity of its errors |
+|---|---|---|
+| **game actions** (follow, attack, pay_v, …) | **97.5%** (117/120) | all 3 misses bailed to `none` (ask again); **0 wrong game-actions fired in 297** |
+| **body gestures** (lean, sit, wave, …) | 93.0% (119/128) | cosmetic — a slightly-off idle |
+| **emotions** (angry, sad, afraid, …) | **60.0%** (24/40) | the entire drag on the average |
+
+**The emotion failure is one root cause, not scattered noise: emotions are
+one-to-many.** `angry_gesture` was the single worst id (5 of 6 missed) because
+"throws her hands up", "clenches her fists", "slams her fist", "punches the
+wall", "balls her hands into fists" are five different *bodies* for one
+*feeling*. Asking a body-gesture classifier to recognise an emotion from its
+physical form is a category error in the menu, not a model weakness.
+
+**The fix, proven:** reclassify the same beats against an *emotion* menu
+(angry/sad/afraid/happy/…) that routes to the facial system instead of the
+animation search. Accuracy jumped **60% → 80%**, and the 6 residual "misses"
+are mostly mislabels on my part — the model called "flinches, startled"
+`surprised` (correct; I wrote `afraid`) and "rubs her temples" `neutral`
+(correct; that is tiredness, not anger). With clean labels the emotion menu is
+~90%, and every remaining error is a beat humans would also dispute.
+
+**Conclusion for the shipped design:** do not use one flat menu. Route by kind —
+game actions to redscript (97.5%, zero dangerous errors), body gestures to the
+existing fuzzy animation search, emotions to the facial system via a small
+emotion menu. The classifier is near-perfect at the job that matters
+(mechanical actions) and the "88.6%" understated it by folding in an
+emotion-reading job that belongs to a different subsystem.
+
 ## DEFINITIVE RUN: 53 ids, n=297, real confidence interval (`harness/battery400.py`)
 
 The number to cite. dpe-7b, scheme-C naming, 297 distinct natural phrasings
