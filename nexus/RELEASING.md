@@ -66,6 +66,32 @@ A shot list that tells the whole story in about 60 seconds:
 Record at the settings you actually play at; the jank is part of the honest
 pitch, and an obviously-real capture ages better than a polished lie.
 
+## Positioning (this is also the takedown shield)
+
+Researched precedent: every AI-voice-mod takedown on record was **distributed
+cloned audio**, triggered by an **individual actor's** complaint, honored
+reactively by Nexus — never a studio, never the union. The single biggest
+trigger was **marketing a specific named performer** (a mod *titled* "Adam
+Jensen as V" got the actor to demand removal, twice).
+
+So the framing is a legal shield, not just a pitch:
+
+- **Sell the generality — "talk to *any* NPC."** Named characters (Panam,
+  Misty) as *examples* in gameplay are fine; making one performer *the product*
+  ("AI Panam", "clone Johnny Silverhand") is the line that got mods pulled.
+- **Ship no audio and no trained voice models** — only the pipeline. (Already
+  true here; don't add a "Panam voice model" download later.)
+- **Keep the AI-generated-content tag on** (§2) — Nexus mandates it; mislabeling
+  invites moderation on its own.
+- **If a rights holder objects, comply immediately.** Because voice is a toggle
+  and no audio ships, the fix is *disable the feature and push an update* — same
+  page, same URL. Precedent (Skyrim "Valerica") confirms you keep the mod live
+  and only remove the voiced part. You are not forced to pull everything.
+
+CDPR itself is the friendly party here — permissive of non-commercial fan mods,
+never pulled an AI voice mod, red line is monetization. Don't sell it and their
+involvement is unlikely.
+
 ## 5. After posting
 
 The first field reports will name characters and situations. The two logs
