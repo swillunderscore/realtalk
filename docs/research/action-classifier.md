@@ -114,6 +114,45 @@ These are the load-bearing findings. Ignore them and the numbers regress.
    +7 points on dpe-7b, **zero** on gemma-31B and Opus 5. Interface design
    substitutes for model size and stops mattering once the model is big enough.
 
+## The emotion channel's real spec: the game has 9 faces, not a taxonomy
+
+The emotion "accuracy" numbers above were measured against labels *I* assigned,
+which for emotions is not a real measurement — two people disagree on
+"startled = afraid or surprised." The proper label set is not subjective at all:
+it is whatever the game engine can actually render.
+
+Cyberpunk's `reactionComponent.SelectFacialEmotion` (decompiled) exposes exactly
+**9 facial emotions**, and two pairs collapse to the same expression:
+
+| game emotion | facial (category, idle) |
+|---|---|
+| Aggressive (anger) | (3, 1) |
+| Curiosity | (1, 3) |
+| Disgust | (3, 7) |
+| Fear | (3, 10) |
+| Funny | (3, 5) |
+| Joy | (3, 5) — same face as Funny |
+| Sad | (3, 3) |
+| Shock | (3, 8) |
+| Surprise | (3, 8) — same face as Shock |
+
+**9 names, 7 distinct faces.** There is no "exasperation" separate from anger;
+the engine has one anger face. This dissolves most of the emotion "misses":
+several penalized the model for not drawing a distinction the game cannot
+display.
+
+**Correct design for the emotion channel:**
+1. classifier emotion menu = these 9 game emotions (as ids), nothing finer;
+2. each maps to the game's own (category, idle) via the table above — reuse the
+   engine's values, do not invent them;
+3. the mod already drives faces through `AnimFeature_FacialReaction` with exactly
+   these category/idle fields (`StreetTalkActions.reds`), so the wiring exists.
+
+With the label set fixed to the game's 9 (Shock/Surprise and Funny/Joy scored as
+interchangeable, since they render identically), emotion classification becomes
+an objective measurement again and the earlier 60/80% figures should be treated
+as lower bounds taken against a subjective, over-fine label set.
+
 ## Failure analysis: the errors are structural and predictable (`harness/emotion.py`)
 
 The 88.6% aggregate hid three very different numbers. Splitting the 297 cases by
