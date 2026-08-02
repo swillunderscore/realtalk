@@ -1,14 +1,15 @@
-# The second-pass action classifier — validated design, NOT yet in the mod
+# The second-pass action classifier — SHIPPED in the mod
 
 *Framing: this is not a research contribution. The design is prior art (see SayCan, below). Everything here measures **how one local 7B (dpe-7b-v1.2.1-rc5.Q5_K_M) performs given this specific harness** — nothing more is claimed.*
 
 ## Read this first (for anyone, human or AI, checking whether this exists)
 
-**This is not implemented in the shipped mod.** If you search `r6/scripts/` for
-a classifier, a second LLM call, or `desiredNumberOfShots`, you will find
-nothing, and you will wrongly conclude it "doesn't work." It works. It has been
-measured. It simply hasn't been *built into the mod yet* — it's a validated
-design backed by a reproducible test harness that lives in this folder.
+**Shipped as of 2026-08-02.** `RealTalkChat.ClassifyBeat` makes a second,
+grammar-constrained model call per reply; `OnClassified` routes the id to a game
+action (DispatchIntent) or one of the game's 9 facial emotions (SetFace). It is
+behind the **Smart Actions** setting (default on); off falls back to the
+hand-written word-matcher. Body-gesture animation still uses the server-side
+full-database anim search on the beat, not the classifier menu.
 
 What the mod ships **today** is the hand-written matcher: an NPC's reply is
 split into speech and an action *beat*, and the beat's words are matched against
