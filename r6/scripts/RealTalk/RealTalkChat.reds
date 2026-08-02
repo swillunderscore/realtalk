@@ -1589,26 +1589,47 @@ public class StChat extends ScriptableSystem {
         this.busy = false;
         let settings = RealTalkSettings.Get();
 
+        // Every failure path now SAYS SO ON SCREEN, not just in the log.
+        // Silence read as "the model is warming up" (field report) - the user
+        // sat waiting for a reply that a dead socket was never going to send.
+        let eui = RealTalkUI.Get();
         if !IsDefined(response) {
             StLog("no response object");
+            if IsDefined(eui) && eui.IsOpen() {
+                eui.AddAction("no reply came back - is your model server running?");
+            }
+            this.FlushReveal();
             return;
         }
         if NotEquals(response.GetStatus(), HttpStatus.OK) {
             let code = response.GetStatusCode();
             StLog(s"request failed, status \(code)");
-            // Status 0 means the request never left - almost always the
-            // missing -no-tls launch flag rather than a server problem.
+            if IsDefined(eui) && eui.IsOpen() {
+                if code == 0 {
+                    // Never opened a socket: server down, wrong port, or the
+                    // -no-tls flag is missing. His exact case was a port
+                    // mismatch after a settings reset.
+                    eui.AddAction("can't reach the model - check Mod Settings > Server (right program/port), and that the game was launched with -no-tls.");
+                } else {
+                    eui.AddAction(s"the model server returned an error (status \(code)).");
+                }
+            }
             if code == 0 {
                 StLog("  status 0 = the request never opened a socket.");
                 StLog("  Launch the game with:  %command% -no-tls");
                 StLog("  and make sure RedHttpClient is 0.7.1 or newer.");
             }
+            this.FlushReveal();
             return;
         }
 
         let json = response.GetJson();
         if !IsDefined(json) || json.IsUndefined() {
             StLog("response was not valid JSON");
+            if IsDefined(eui) && eui.IsOpen() {
+                eui.AddAction("the server replied, but not in the expected format.");
+            }
+            this.FlushReveal();
             return;
         }
         let root = json as JsonObject;
