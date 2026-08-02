@@ -1989,11 +1989,38 @@ public class StActions extends IScriptable {
                 cat = 2; idle = 2;
             }
         }}}}}}}}
+        this.SetFace(npc, cat, idle);
+    }
+
+    // Apply a facial expression by the game's own (category, idle). The
+    // classifier drives this with the engine's real 9 emotions (MapEmotion);
+    // FaceTalk's keyword heuristic is the fallback when the classifier is off.
+    public func SetFace(npc: ref<NPCPuppet>, cat: Int32, idle: Int32) -> Void {
+        if !IsDefined(npc) || npc.IsDead() {
+            return;
+        }
         let feat = new AnimFeature_FacialReaction();
         feat.category = cat;
         feat.idle = idle;
         AnimationControllerComponent.ApplyFeature(npc, n"FacialReaction", feat);
         this.faceActive = true;
+    }
+
+    // classifier emotion id -> the game's own (category, idle), packed cat*100
+    // + idle. -1 = not an emotion. Table from decompiled
+    // reactionComponent.SelectFacialEmotion (docs/research/action-classifier.md).
+    public static func MapEmotion(id: String) -> Int32 {
+        let x: String = StrLower(StActions.TrimEnds(id));
+        if Equals(x, "angry") { return 301; }
+        if Equals(x, "curious") { return 103; }
+        if Equals(x, "disgusted") { return 307; }
+        if Equals(x, "afraid") { return 310; }
+        if Equals(x, "amused") { return 305; }
+        if Equals(x, "happy") { return 305; }
+        if Equals(x, "sad") { return 303; }
+        if Equals(x, "shocked") { return 308; }
+        if Equals(x, "surprised") { return 308; }
+        return -1;
     }
 
     public func FaceRest(npc: ref<NPCPuppet>) -> Void {
@@ -2821,7 +2848,16 @@ public class StActions extends IScriptable {
             + "hand_over_weapon: gives their weapon to V\n"
             + "attack: opens fire, stabs, lunges, starts a fight\n"
             + "stand_down: stops fighting, lowers their weapon, calms down\n"
-            + "none: anything else - a look, a gesture, an expression, just talking"
+            + "angry: anger, rage, hostility on their face\n"
+            + "curious: curiosity, interest, intrigue\n"
+            + "disgusted: disgust, contempt, revulsion\n"
+            + "afraid: fear, fright, dread\n"
+            + "happy: joy, warmth, a smile, delight\n"
+            + "amused: amusement, finding something funny, laughing\n"
+            + "sad: sadness, grief, dejection\n"
+            + "shocked: shock, being stunned\n"
+            + "surprised: surprise, being startled\n"
+            + "none: a plain gesture with no clear emotion, or just talking"
             + "\n\nMost stage directions are flavour and match nothing here. Answer"
             + " 'none' unless the line clearly shows one of the actions above. Answer"
             + " with the id alone. One word, nothing else.";
@@ -2830,7 +2866,10 @@ public class StActions extends IScriptable {
     public static func ClassifierGrammar() -> String {
         return "root ::= \"follow\" | \"stay_here\" | \"leave\" | \"run\""
             + " | \"step_back\" | \"step_closer\" | \"drop_item\" | \"holster\""
-            + " | \"hand_over_weapon\" | \"attack\" | \"stand_down\" | \"none\"";
+            + " | \"hand_over_weapon\" | \"attack\" | \"stand_down\""
+            + " | \"angry\" | \"curious\" | \"disgusted\" | \"afraid\""
+            + " | \"happy\" | \"amused\" | \"sad\" | \"shocked\""
+            + " | \"surprised\" | \"none\"";
     }
 
     // classifier id -> the intent string DispatchIntent understands. "" = no

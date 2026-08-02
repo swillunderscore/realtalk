@@ -907,7 +907,12 @@ public class StChat extends ScriptableSystem {
         let anims = RealTalkSettings.Get();
         if IsDefined(anims) && anims.talkAnims && IsDefined(this.actions) {
             this.actions.StartTalking(this.activeNpc, this.activeGender, this.activeVkey, text, this.pendingAnim);
-            this.actions.FaceTalk(this.activeNpc, this.activeDirection);
+            // The classifier drives the face when Smart Actions is on (the
+            // game's real 9 emotions). Only fall back to the keyword heuristic
+            // when it is off - otherwise the two overwrite each other.
+            if !anims.smartActions {
+                this.actions.FaceTalk(this.activeNpc, this.activeDirection);
+            }
         }
         this.DuckDialogue();
         this.talkStopOnIdle = !more;
@@ -1663,8 +1668,15 @@ public class StChat extends ScriptableSystem {
         }
         let intent: String = StActions.MapClassId(id);
         if StrLen(intent) > 0 {
-            StLog(s"classifier: beat -> \(id)");
+            StLog(s"classifier: beat -> \(id) (action)");
             this.actions.DispatchIntent(npc, intent);
+            return;
+        }
+        // An emotion: drive the face with the game's own (category, idle).
+        let emo: Int32 = StActions.MapEmotion(id);
+        if emo >= 0 {
+            StLog(s"classifier: beat -> \(id) (face)");
+            this.actions.SetFace(npc, emo / 100, emo % 100);
             return;
         }
         // Beat classified as nothing mechanical. Fall to the asked-agreement:
