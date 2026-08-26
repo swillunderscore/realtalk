@@ -574,6 +574,50 @@ ANIM_SEMANTIC = {"look", "crossed", "folded", "shrug", "yes", "chin",
                  "point"}
 
 
+# NSFW stage directions. When the model's beat is explicitly sexual, the
+# conservative filters (furniture, lying, floor, sit) exclude EXACTLY the
+# anims the scene wants - kneeling, bent over, floor poses, sexy dances. A
+# relaxed pool unlocks them for that beat only; two-actor ("synced"/npc1/
+# npc2), vehicles, locomotion and transitions stay banned - this system
+# animates ONE character (field report: "she didn't do any animations").
+NSFW_TRIGGERS = ("sex", "sexy", "fuck", "fucking", "screw", "bang", "strip",
+                 "striptease", "strips", "stripping", "undress", "undressing",
+                 "tease", "teases", "teasing", "seduce", "seduces", "seduces",
+                 "aroused", "horny", "kneel", "kneels", "kneeling", "knees",
+                 "bend", "bends", "bending", "bent", "moan", "moans",
+                 "moaning", "panties", "naked", "nude", "quickie", "doggy",
+                 "blowjob", "lick", "licks", "licking", "tits", "boobs",
+                 "ass")
+# Model words -> tokens that appear in REAL anim names in the installed
+# database (measured: kneel=310, sexy dance/shuffle, striptease, the Scenes
+# rig's stripclub set, dildo idles). "stripclub" reaches the game's actual
+# stripper animations, which the base vocabulary could not see at all.
+NSFW_SYNONYMS = {
+    "sex": ("sexy", "striptease", "stripclub"), "sexy": ("sexy", "stripclub"),
+    "fuck": ("sexy", "stripclub"), "fucking": ("sexy", "stripclub"),
+    "strip": ("striptease", "stripclub"), "striptease": ("striptease", "stripclub"),
+    "stripping": ("striptease", "stripclub"), "strips": ("striptease", "stripclub"),
+    "undress": ("striptease", "stripclub"), "undressing": ("striptease", "stripclub"),
+    "tease": ("striptease", "stripclub"), "teases": ("striptease", "stripclub"),
+    "teasing": ("striptease", "stripclub"), "seduce": ("striptease", "stripclub"),
+    "aroused": ("sexy",), "horny": ("sexy",), "moan": ("sexy",),
+    "moans": ("sexy",), "moaning": ("sexy",),
+    "kneel": ("kneel",), "kneels": ("kneel",), "kneeling": ("kneel",),
+    "knees": ("kneel",), "quickie": ("kneel",), "doggy": ("kneel",),
+    "blowjob": ("kneel",), "lick": ("kneel",), "licks": ("kneel",),
+    "licking": ("kneel",),
+    "bend": ("bend",), "bends": ("bend",), "bending": ("bend",),
+    "bent": ("bend",), "ass": ("bend",),
+    "panties": ("striptease", "stripclub"), "naked": ("striptease", "stripclub"),
+    "nude": ("striptease", "stripclub"), "tits": ("striptease", "stripclub"),
+    "boobs": ("striptease", "stripclub"),
+}
+NSFW_EXCLUDE = ("synced", "npc1", "npc2", "vehicle", "car_", "wheel",
+                "walk", "sprint", "aim", "melee", "reload", "cover",
+                "photo", "phone", "glitch", "cyberspace", "gun", "weapon",
+                "chip", "sleep", "stairs", "sit", "chair", "to__")
+
+
 def _anim_db_path():
     return os.path.join(ARGS.game_dir, "bin", "x64", "plugins",
                         "cyber_engine_tweaks", "mods", "AppearanceMenuMod",
@@ -605,6 +649,53 @@ def _anim_names(rig: str):
     return ANIM_CACHE["rigs"][rig]
 
 
+def _nsfw_names(rig: str):
+    """The sexual/suggestive solo pool for a rig: relaxed exclusions on the
+    base rig, plus the Scenes rig's stripclub set (performed in-world by NPC
+    strippers on average-rig bodies). Cached like the base pool."""
+    path = _anim_db_path()
+    try:
+        mtime = os.path.getmtime(path)
+    except OSError:
+        return []
+    if mtime != ANIM_CACHE["mtime"]:
+        ANIM_CACHE["rigs"] = {}
+        ANIM_CACHE["mtime"] = mtime
+    key = "nsfw:" + rig
+    if key in ANIM_CACHE["rigs"]:
+        return ANIM_CACHE["rigs"][key]
+    import sqlite3
+    out = []
+    try:
+        con = sqlite3.connect(path)
+        for r in (rig, rig + " Scenes"):
+            try:
+                rows = con.execute(
+                    "SELECT anim_name FROM workspots WHERE anim_rig = ?",
+                    (r,)).fetchall()
+            except Exception:
+                rows = []
+            for (n,) in rows:
+                ln = n.lower()
+                if r.endswith("Scenes") and "stripclub" not in ln:
+                    continue
+                if any(x in ln for x in NSFW_EXCLUDE):
+                    continue
+                if any(x in ln for x in ANIM_PROP_POSES):
+                    continue
+                if not any(t in ln for t in ("sex", "striptease", "sexy",
+                                             "kneel", "bend", "dildo",
+                                             "smack", "stripclub", "pole")):
+                    continue
+                out.append(n)
+        con.close()
+    except Exception:
+        pass
+    ANIM_CACHE["rigs"][key] = out
+    print(f"[tts] nsfw pool for {rig}: {len(out)} anims", flush=True)
+    return out
+
+
 # Poses built around a prop the workspot system will not actually spawn -
 # an invisible can or tablet reads as mime, never as charm. Excluded ALWAYS
 # (field-caught: 'Look, I'm busy' picked rh_can__look_right - holding air).
@@ -624,7 +715,10 @@ ANIM_HANDS_BUSY = ("clap", "eat")
 ANIM_SCENE_FURNITURE = ("lean", "bar_", "_bar", "table", "sink", "door",
                         "wall", "rail", "counter", "keyboard", "machine",
                         "window", "crate", "chair", "bed", "couch", "car_",
-                        "bike", "wheel", "fence")
+                        "bike", "wheel", "fence", "microwave")
+# ^ "microwave" is a kitchen-appliance prop pose (hand on a microwave that will
+# never spawn), and it also outscored every real wave because "wave" lives
+# inside "micro-wave" - excluding it fixes the search itself, no rescue needed.
 
 
 def usable_anims(rig: str, held: bool = False):
@@ -665,7 +759,51 @@ def cached_gender(voice: str) -> str:
     return ""
 
 
-def find_anim(direction: str, gender: str, held: bool = False) -> str:
+# The classifier's gesture id, used ONLY when the free-text search below
+# DECLINES. Each id maps to token(s) that name a real standing anim (verified
+# present for BOTH rigs), plus bans for substring false-friends: "wave" inside
+# "microwave", "bow" inside "elbow", a "point" that is really holding a knife.
+# Prop/furniture gestures (smoke, drink, lean) are deliberately ABSENT - they
+# have no propless anim, so their decline correctly stays a talk-loop.
+GESTURE_RESCUE = {
+    "cross_arms":      (("crossed",), ()),
+    "hands_on_hips":   (("hip", "hips"), ()),
+    "point":           (("pointing", "point"),
+                        ("knife", "gun", "weapon", "pistol", "rifle")),
+    "shrug":           (("shrug",), ()),
+    "stretch":         (("stretch",), ()),
+    "gesture_explain": (("explain", "gesture"), ()),
+    "look_around":     (("around",), ()),
+    "facepalm":        (("facepalm",), ()),
+    "wave":            (("wave",), ("microwave",)),
+    "clap":            (("clap",), ()),
+    "bow":             (("bow90", "bow"), ("elbow",)),
+    "pray":            (("pray",), ()),
+    "dance":           (("dance",), ()),
+}
+
+
+def rescue_anim(names, gesture: str) -> str:
+    """The classifier named a gesture the free-text search could not serve.
+    Turn that id into a real standing anim, or "" to leave the decision to the
+    talk-loop fallback (unknown id, or a pruned prop/furniture gesture)."""
+    spec = GESTURE_RESCUE.get(gesture)
+    if not spec:
+        return ""
+    cands, ban = spec
+    for c in cands:
+        hits = [n for n in names
+                if c in re.split(r"[_\W]+", n.lower())
+                and not any(b in n for b in ban)]
+        if hits:
+            # same taste as the fallback: a talking, standing, tightest name
+            hits.sort(key=lambda n: ("talk" not in n, "stand" not in n, len(n)))
+            return hits[0]
+    return ""
+
+
+def find_anim(direction: str, gender: str, held: bool = False,
+              gesture: str = "") -> str:
     g = gender.lower()
     rig = "Woman Average" if g.startswith("f") else (
         "Man Average" if g.startswith("m") else "")
@@ -691,6 +829,22 @@ def find_anim(direction: str, gender: str, held: bool = False) -> str:
             dtoks.add(m)
     if not dtoks:
         return ""
+    # A sexual beat swaps in the relaxed pool and its own vocabulary. The
+    # nsfw tokens are semantic-weight: "striptease"/"kneel" must be able to
+    # drive a pick alone, or the pool exists but nothing reaches it.
+    nsfw_sem = set()
+    words = re.findall(r"[a-z]{3,}", direction.lower())
+    if any(w in NSFW_TRIGGERS for w in words):
+        pool = _nsfw_names(rig)
+        if pool:
+            names = pool
+            for w in words:
+                m = NSFW_SYNONYMS.get(w)
+                if isinstance(m, tuple):
+                    nsfw_sem.update(m)
+                elif isinstance(m, str):
+                    nsfw_sem.add(m)
+            dtoks |= nsfw_sem
     best, best_score, best_sem = "", 0, 0
     for name in names:
         ntoks = {t for t in re.split(r"[_\W]+", name.lower()) if len(t) >= 3}
@@ -703,7 +857,7 @@ def find_anim(direction: str, gender: str, held: bool = False) -> str:
                       or (len(n) >= 5 and n in d)
                       for n in ntoks)
             if hit:
-                if d in ANIM_PERFORMATIVE:
+                if d in ANIM_PERFORMATIVE or d in nsfw_sem:
                     score += 3
                     sem += 1
                 else:
@@ -726,7 +880,8 @@ def find_anim(direction: str, gender: str, held: bool = False) -> str:
     # Direct performatives trigger readily; everything else needs the
     # strength of a proper conversational match (mood + talk + stand), so
     # a lone literal word can never hijack the pose.
-    threshold = 3 if any(d in ANIM_PERFORMATIVE for d in dtoks) else 4
+    threshold = 3 if any(d in ANIM_PERFORMATIVE or d in nsfw_sem
+                          for d in dtoks) else 4
     if best_sem >= 1 and best_score >= threshold:
         if LOG_CONTENT:
             print(f"[tts] anim match: '{direction[:60]}' -> {best}", flush=True)
@@ -748,6 +903,14 @@ def find_anim(direction: str, gender: str, held: bool = False) -> str:
     # design exists to avoid. Draw a conversational standing loop from the
     # full filtered pool for this rig (hundreds of them, more with every pose
     # pack), at random so a long conversation never repeats itself.
+    # RESCUE-ON-DECLINE: before going random, honour the classifier's read of
+    # this beat. It fires ONLY here - a confident free-text match above is
+    # never overridden - so it can only upgrade a would-be generic loop into
+    # the gesture the writing model actually described.
+    resc = rescue_anim(names, gesture)
+    if resc:
+        print(f"[tts] anim rescue ({gesture}) -> {resc}", flush=True)
+        return resc
     return fallback_anim(rig)
 
 
@@ -1381,6 +1544,7 @@ class Handler(BaseHTTPRequestHandler):
                 return self._next_chunk(req)
             text = (req.get("text") or "").strip()
             direction = (req.get("direction") or "").strip()
+            gesture = (req.get("gesture") or "").strip()
             slot = int(req.get("slot", 0)) % 4
             if not text:
                 return self._json(400, {"error": "no text"})
@@ -1458,7 +1622,7 @@ class Handler(BaseHTTPRequestHandler):
                                     "text": chunks[0],
                                     "anim": find_anim(
                                         direction, req.get("gender", ""),
-                                        bool(req.get("held")))})
+                                        bool(req.get("held")), gesture)})
         except Exception as e:  # surface errors to the log, fail the request
             print(f"[tts] ERROR: {e}", flush=True)
             return self._json(500, {"error": str(e)})

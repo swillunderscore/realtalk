@@ -75,6 +75,7 @@ public class StVoice {
     @if(ModuleExists("Audioware"))
     public static func Speak(game: GameInstance, npc: wref<NPCPuppet>, slot: Int32) -> Void {
         if !IsDefined(npc) {
+            StLog("voice: speak dropped - npc undefined");
             return;
         }
         // GameInstance.GetAudioSystemExt(game), NOT a bare call: Audioware
@@ -83,6 +84,7 @@ public class StVoice {
         // shorthand but is UNRESOLVED_FN against the real installed script.
         let ext = GameInstance.GetAudioSystemExt(game);
         if !IsDefined(ext) {
+            StLog("voice: speak dropped - AudioSystemExt undefined (Audioware not loaded?)");
             return;
         }
         let id: EntityID = npc.GetEntityID();

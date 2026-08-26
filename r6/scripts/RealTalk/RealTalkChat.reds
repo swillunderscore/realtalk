@@ -213,6 +213,19 @@ public class StTtsNextTick extends DelayCallback {
     }
 }
 
+// The safety net for the deferred TTS send: if the classifier is slow or dead,
+// this fires the request anyway (without a gesture) so speech never hangs on
+// classification. The gen guard drops it when a newer exchange has moved on.
+public class StTtsFireTick extends DelayCallback {
+    public let chat: wref<StChat>;
+    public let gen: Int32;
+    public func Call() -> Void {
+        if IsDefined(this.chat) {
+            this.chat.FireTts(this.gen);
+        }
+    }
+}
+
 // "Rebuild All Voices".
 public class StTtsResetDTO extends IScriptable {
     public let reset_voices: Int32;
@@ -231,6 +244,9 @@ public class StTtsRequestDTO extends IScriptable {
                                    // same-named crowd NPCs don't share a voice
     public let direction: String;  // the reply's stage direction - the server
                                    // matches it against AMM's anim database
+    public let gesture: String;    // the classifier's read of that beat, used
+                                   // ONLY when the free-text match declines -
+                                   // it upgrades a would-be generic talk-loop
     public let held: Bool;         // hands are full: the anim search must not
                                    // pick clapping or prop-holding loops
     public let log: Bool;          // mirror of the in-game Debug Log switch:
@@ -294,6 +310,15 @@ public class StChat extends ScriptableSystem {
     private let pendingClassBeat: String;
     private let pendingClassSpeech: String;
     private let pendingClassAsked: String;
+
+    // The TTS send waits for the classifier so the beat's gesture can ride in
+    // the request (gesture-rescue). MaybeSpeak ARMS the send (fills the two
+    // pending* below, sets ttsArmed); FireTts posts it once - triggered by the
+    // classifier callback, or a timeout if classification is slow/dead.
+    private let pendingGesture: String;
+    private let pendingSpeakText: String;
+    private let ttsArmed: Bool;
+    private let deferTts: Bool;
 
     // Kept so the character card can be REBUILT the moment a biography
     // arrives - the card is the only thing the model ever sees, so a bio that
@@ -879,6 +904,7 @@ public class StChat extends ScriptableSystem {
 
     public func PlayNow(slot: Int32, gen: Int32, text: String, more: Bool) -> Void {
         if gen != this.voiceGen {
+            StLog(s"voice: play dropped - gen \(gen) != current \(this.voiceGen) (silenced/superseded)");
             return;   // silenced or superseded while queued
         }
         // Never START audio while a menu is up. The poller's mute only stops
@@ -887,6 +913,7 @@ public class StChat extends ScriptableSystem {
         // over the menu anyway).
         if GameInstance.GetBlackboardSystem(GetGameInstance()).Get(GetAllBlackboardDefs().UI_System)
             .GetBool(GetAllBlackboardDefs().UI_System.IsInMenu) {
+            StLog("voice: play dropped - menu open when chunk arrived");
             this.FlushReveal();
             return;
         }
@@ -1198,7 +1225,14 @@ public class StChat extends ScriptableSystem {
     // window is, and that limit is applied where it physically exists: on the
     // request, in Send(), governed by the History Sent setting.
     public func SaveActive() -> Void {
-        if this.activeId == Cast<Uint64>(0) || this.activeIsCrowd {
+        // Crowd conversations save too. The old crowd gate here threw away
+        // every pedestrian chat the moment the panel closed - mid-session
+        // included, so reopening the SAME still-alive NPC started blank
+        // ("our conversation wasn't even saved", field report). Unstable
+        // identity is the crowd system's problem, not a reason to delete
+        // what was said: worst case a recycled face inherits a thread.
+        // MEMORY stays place-anchored - see the crowd guard in MaybeSummarize.
+        if this.activeId == Cast<Uint64>(0) {
             return;
         }
         let dto = new StChatFileDTO();
@@ -1235,6 +1269,13 @@ public class StChat extends ScriptableSystem {
     //  Runs while the panel is closed, so its latency is invisible.
     // ------------------------------------------------------------------
     private func MaybeSummarize() -> Void {
+        // MEMORY STAYS PLACE-ANCHORED. A pooled pedestrian's record hash
+        // outlives its face; a gist that migrates to a recycled stranger is
+        // worse than no gist. (Conversations save for everyone - see
+        // SaveActive - but who "remembers you" does not.)
+        if this.activeIsCrowd {
+            return;
+        }
         let settings = RealTalkSettings.Get();
         let cfg = RealTalkConfig.Get();
         let memory = StMemory.Get();
@@ -1251,6 +1292,14 @@ public class StChat extends ScriptableSystem {
             return;
         }
 
+        // The character's REAL name prefixes their lines, never "Me:". A
+        // "V:/Me:" transcript leaves the model to guess who "Me" is, and a
+        // small model writes the memory from V's point of view - V's diary
+        // stored as the NPC's memory (field-caught: "warm fuzzy sensation as
+        // Judy walks into the room" in JUDY's gist). Names leave no room for
+        // that guess.
+        let who: String = StrLen(this.activeName) > 0 ? this.activeName : "Me";
+
         let convo: String = "";
         let total: Int32 = ArraySize(this.history);
         let start: Int32 = total - 80;
@@ -1260,7 +1309,7 @@ public class StChat extends ScriptableSystem {
         let i: Int32 = start;
         while i < total {
             if NotEquals(this.history[i].role, "action") {
-                convo += (Equals(this.history[i].role, "user") ? "V: " : "Me: ")
+                convo += (Equals(this.history[i].role, "user") ? "V: " : who + ": ")
                        + this.history[i].content + "\n";
             }
             i += 1;
@@ -1278,9 +1327,10 @@ public class StChat extends ScriptableSystem {
         req.temperature = 0.4;
         req.stream = false;
         ArrayPush(req.messages, this.Msg("system",
-            "You maintain the private memory of a character in Night City."
-            + " From the conversation, write what the character now knows, feels and remembers about V"
-            + " - facts, promises, grudges, warmth. Three to five sentences, first person, as the character."
+            s"You maintain the private memory of \(who), a character in Night City."
+            + s" From the conversation, write what \(who) now knows, feels and remembers about V"
+            + " - facts, promises, grudges, warmth. Three to five sentences, first person:"
+            + s" \"I\" is \(who), and V is the other person - never write V's own feelings."
             + " If a previous memory is given, merge it and keep what still matters."));
         ArrayPush(req.messages, this.Msg("user", s"Previous memory: \(prior)\n\nConversation:\n\(convo)"));
 
@@ -1650,6 +1700,7 @@ public class StChat extends ScriptableSystem {
             StLog("classifier: call failed - falling back to the word matcher");
             this.actions.ApplyIntentAsked(npc, this.pendingClassBeat,
                                           this.pendingClassSpeech, this.pendingClassAsked);
+            this.FireTts(this.voiceGen);
             return;
         }
         let id: String = "";
@@ -1670,6 +1721,7 @@ public class StChat extends ScriptableSystem {
         if StrLen(intent) > 0 {
             StLog(s"classifier: beat -> \(id) (action)");
             this.actions.DispatchIntent(npc, intent);
+            this.FireTts(this.voiceGen);
             return;
         }
         // An emotion: drive the face with the game's own (category, idle).
@@ -1677,6 +1729,16 @@ public class StChat extends ScriptableSystem {
         if emo >= 0 {
             StLog(s"classifier: beat -> \(id) (face)");
             this.actions.SetFace(npc, emo / 100, emo % 100);
+            this.FireTts(this.voiceGen);
+            return;
+        }
+        // A body gesture: it rides in the TTS request (req.gesture) and rescues
+        // the animation only if the server's own free-text search declines.
+        let g: String = StActions.MapGesture(id);
+        if StrLen(g) > 0 {
+            StLog(s"classifier: beat -> \(id) (gesture)");
+            this.pendingGesture = g;
+            this.FireTts(this.voiceGen);
             return;
         }
         // Beat classified as nothing mechanical. Fall to the asked-agreement:
@@ -1688,6 +1750,7 @@ public class StChat extends ScriptableSystem {
             StLog(s"classifier: falling to agreement on '\(this.pendingClassAsked)'");
             this.actions.DispatchIntent(npc, this.pendingClassAsked);
         }
+        this.FireTts(this.voiceGen);
     }
 
     private cb func OnReply(response: ref<HttpResponse>) -> Void {
@@ -1778,10 +1841,23 @@ public class StChat extends ScriptableSystem {
         // A beat is a few words. Anything longer is prose the game cannot act
         // out, and storing it teaches the model to write more of it - so it is
         // cut here, before it reaches history or the animation search.
+        // WORD BOUNDARY, never mid-word: StrLeft(beat, 90) chopped the beat
+        // mid-word, and that fragment then showed on screen and saved into
+        // history - "turns to the stranger wi" was exactly this slice
+        // (field report).
         if StrLen(this.activeDirection) > 90 {
-            this.activeDirection = StrLeft(this.activeDirection, 90);
+            let cut: Int32 = 90;
+            while cut > 0 && !Equals(StrMid(this.activeDirection, cut - 1, 1), " ") {
+                cut -= 1;
+            }
+            this.activeDirection = cut > 0
+                ? StrLeft(this.activeDirection, cut - 1)
+                : StrLeft(this.activeDirection, 90);
         }
         this.pendingAnim = n"";
+        this.pendingGesture = "";
+        this.deferTts = false;
+        this.ttsArmed = false;
         text = StActions.CleanProse(text, this.activeName);
 
         // Act on any tags before the text is shown or stored - the cleaned
@@ -1800,6 +1876,9 @@ public class StChat extends ScriptableSystem {
                 this.pendingClassBeat = this.activeDirection;
                 this.pendingClassSpeech = text;
                 this.pendingClassAsked = this.pendingAsk;
+                // Hold the TTS send until this returns so its gesture read can
+                // ride in the request (see FireTts / OnClassified).
+                this.deferTts = true;
                 this.ClassifyBeat(this.activeDirection);
             } else {
                 // No beat (asked-agreement still handled here), or classifier
@@ -1809,6 +1888,11 @@ public class StChat extends ScriptableSystem {
             }
             this.pendingAsk = "";
         }
+
+        // A reply that hit the Reply Length token cap ends mid-word. Trim
+        // display, voice AND history back to the last complete sentence - the
+        // dangling fragment is garbage in all three places ("fall to th").
+        text = StChat.TrimToSentence(text);
 
         // WHAT THE MODEL REMEMBERS SAYING: the words plus its own action beat,
         // which is how a roleplay chat reads and how the format sustains
@@ -1840,7 +1924,21 @@ public class StChat extends ScriptableSystem {
         // instead of landing all at once ahead of it. No voice = instant
         // text, and every failure path flushes the full text.
         let spoke: Bool = this.MaybeSpeak(text);
-        if !spoke {
+        if spoke {
+            if this.deferTts {
+                // The classifier callback (OnClassified) fires the send the
+                // moment it lands, ~a tenth of a second out; this timer only
+                // covers a classifier that is slow or dead so speech is never
+                // held hostage to it.
+                let fire = new StTtsFireTick();
+                fire.chat = this;
+                fire.gen = this.voiceGen;
+                GameInstance.GetDelaySystem(GetGameInstance()).DelayCallback(fire, 0.6, false);
+            } else {
+                // No classifier this turn - nothing to wait for, send now.
+                this.FireTts(this.voiceGen);
+            }
+        } else {
             // Nothing to say out loud: give the place back rather than making
             // everything behind it wait for audio that is never coming.
             this.CloseChain(this.npcChain);
@@ -1878,8 +1976,15 @@ public class StChat extends ScriptableSystem {
                         ui.AddAction("no answer came back - say that again");
                         StLog("reply: the model returned nothing");
                     } else {
-                        ui.AddAction(this.activeDirection, true);
-                        StLog("reply was action-only - shown as an action");
+                        // The beat is MACHINE INPUT, not chat output. By this
+                        // point it has already been to the classifier /
+                        // word-matcher, and any intent that fired announced
+                        // its own short line ("steps closer"). Writing the raw
+                        // narration out here put stage directions in the
+                        // transcript; a beat that matched nothing now shows
+                        // nothing at all - the animation IS the output
+                        // (owner call).
+                        StLog("reply was action-only - the beat drove the animation");
                     }
                 }
             }
@@ -1915,6 +2020,37 @@ public class StChat extends ScriptableSystem {
                 ui.UpdateLastLine("THEM", full);
             }
         }
+    }
+
+    // Cut a token-capped reply back to the last complete sentence: ends with
+    // punctuation -> unchanged; an earlier terminator exists -> keep through
+    // it; one unterminated fragment -> at least drop the dangling partial
+    // word. The fragment is garbage on screen, in the voice, and in history.
+    public static func TrimToSentence(text: String) -> String {
+        let n: Int32 = StrLen(text);
+        if n < 2 {
+            return text;
+        }
+        let last: String = StrMid(text, n - 1, 1);
+        if Equals(last, ".") || Equals(last, "!") || Equals(last, "?") || Equals(last, "\"") {
+            return text;
+        }
+        let i: Int32 = n - 1;
+        while i > 0 {
+            let ch: String = StrMid(text, i - 1, 1);
+            if Equals(ch, ".") || Equals(ch, "!") || Equals(ch, "?") {
+                return StrLeft(text, i);
+            }
+            i -= 1;
+        }
+        // No terminator anywhere: the whole reply is one chopped fragment.
+        // Dropping it entirely would hide the reply, so drop just the
+        // trailing partial word.
+        let m: Int32 = n;
+        while m > 0 && !Equals(StrMid(text, m - 1, 1), " ") {
+            m -= 1;
+        }
+        return m > 0 ? StrLeft(text, m - 1) : text;
     }
 
     // V's line, in V's voice, from the player. Fired the moment the message is
@@ -2050,9 +2186,32 @@ public class StChat extends ScriptableSystem {
         }
         // A new reply supersedes any chunk chain still in flight.
         this.ttsChainId = "";
+        // ARM ONLY. The request is built and posted in FireTts, which runs once
+        // the classifier has read the beat (so req.gesture is filled) - or on
+        // the timeout net if it does not. Returning true here still engages the
+        // voice-paced-text machinery; the send just trails by ~a tenth second.
+        this.pendingSpeakText = text;
+        this.ttsArmed = true;
+        return true;
+    }
 
+    // The deferred half of MaybeSpeak: actually send the TTS request. Fired by
+    // the classifier callback the instant it lands (gesture filled), or by the
+    // timeout net if classification is slow or dead (gesture empty). The
+    // ttsArmed flag makes it fire exactly once; the gen guard drops a stale
+    // net after a newer exchange or a menu pause has moved voiceGen on.
+    public func FireTts(gen: Int32) -> Void {
+        if gen != this.voiceGen || !this.ttsArmed {
+            return;
+        }
+        this.ttsArmed = false;
+        let cfg = RealTalkConfig.Get();
+        let settings = RealTalkSettings.Get();
+        if !IsDefined(cfg) || !IsDefined(settings) {
+            return;
+        }
         let req = new StTtsRequestDTO();
-        req.text = text;
+        req.text = this.pendingSpeakText;
         req.voice = this.activeName;
         req.voicetag = this.activeVoiceTag;
         req.crowd = this.activeIsCrowd;
@@ -2060,6 +2219,7 @@ public class StChat extends ScriptableSystem {
         req.faction = this.activeFaction;
         req.vkey = this.activeVkey;
         req.direction = this.activeDirection;
+        req.gesture = this.pendingGesture;
         req.held = StrLen(StActions.HeldItemName(this.activeNpc)) > 0;
         req.log = settings.debugLog;
         req.cond = settings.condSeconds;
@@ -2070,11 +2230,6 @@ public class StChat extends ScriptableSystem {
         let headers: array<HttpHeader>;
         ArrayPush(headers, HttpHeader.Create("Content-Type", "application/json"));
         AsyncHttpClient.Post(HttpCallback.Create(this, n"OnTtsReady"), cfg.ttsUrl, ToJson(req).ToString(), headers);
-        // THE line whose absence broke voice-paced text entirely: without it
-        // this Bool function fell off the end, returned default FALSE, and
-        // every reply took the no-voice instant-text path - words on screen,
-        // voice trailing behind, pacing machinery never engaged once.
-        return true;
     }
 
     // Chained playback state: replies are spoken sentence by sentence, so the

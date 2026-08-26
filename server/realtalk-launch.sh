@@ -23,6 +23,23 @@ CONF="$DIR/sidecars.conf"
 PIDFILE="$DIR/logs/sidecars.pids"
 mkdir -p "$DIR/logs"
 
+# ONE LAUNCHER AT A TIME. Steam sometimes re-execs the launch command, and
+# two live instances then share one pidfile: whichever exits first truncates
+# the file containing the OTHER'S sidecar pids. Those pids are now
+# untracked, so no later startup cleanup ever kills them, every later launch
+# "already running - not touching it"-adopts them, and the model server
+# outlives the game indefinitely (field-caught: llama-server pinned in VRAM
+# a whole session after close). The old instance is on its way out - re-exec
+# means its game is dying - so wait for it to finish its own cleanup before
+# touching the pidfile.
+if pgrep -f "realtalk-launch.sh" | grep -vw "$$" | grep -q .; then
+    echo "[realtalk] another launcher instance is finishing - waiting for its cleanup"
+    for i in {1..60}; do
+        pgrep -f "realtalk-launch.sh" | grep -vw "$$" >/dev/null || break
+        sleep 1
+    done
+fi
+
 # Strays from a previous session. If the wrapper dies before its cleanup
 # (game crash, Steam re-exec, power loss), its sidecars are orphaned - and
 # the "already running - not touching it" check below then ADOPTS the
@@ -52,8 +69,12 @@ if [ -f "$CONF" ]; then
         cmd="$line"
         case "$cmd" in /*) : ;; *) cmd="$DIR/$cmd" ;; esac
         base="$(basename "${cmd%% *}")"
-        # already running? leave it alone (also covers a hand-started one)
-        if pgrep -f "$base" >/dev/null 2>&1; then
+        # Already running? leave it alone (also covers a hand-started one).
+        # Match the FULL binary path, not the basename: anything else named
+        # llama-server (the coding endpoint on build-mtp, llama-swap's
+        # children) used to count as "this sidecar already up", so it was
+        # silently never started and the game found a dead port.
+        if pgrep -f "${cmd%% *}" >/dev/null 2>&1; then
             echo "[realtalk] $base already running - not touching it"
             continue
         fi
@@ -74,6 +95,18 @@ for p in "${PIDS[@]}"; do
     # negative pid = the whole process group we created with setsid
     kill -TERM -"$p" 2>/dev/null
 done
+# TERM is a request, not a guarantee - llama-server's graceful shutdown can
+# hang on GPU teardown and keep holding VRAM while this script reports
+# success. Give it a moment, then escalate; say so if even KILL fails.
+if [ "${#PIDS[@]}" -gt 0 ]; then
+    sleep 2
+    for p in "${PIDS[@]}"; do
+        if kill -0 -"$p" 2>/dev/null; then
+            echo "[realtalk] sidecar pid $p ignored TERM - killing it"
+            kill -KILL -"$p" 2>/dev/null
+        fi
+    done
+fi
 : > "$PIDFILE"
 [ "${#PIDS[@]}" -gt 0 ] && echo "[realtalk] stopped ${#PIDS[@]} sidecar(s)"
 exit $rc

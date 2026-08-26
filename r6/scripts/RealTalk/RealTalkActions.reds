@@ -334,15 +334,28 @@ public class StActions extends IScriptable {
                 this.SaveFollowers();
             } else {
                 let aic = f.npc.GetAIControllerComponent();
-                if IsDefined(aic) && !aic.IsPlayerCompanion() {
+                // TRUTH IS PROXIMITY, NOT THE ROLE FLAG. IsPlayerCompanion()
+                // is never set for crowd-class NPCs even while their follow
+                // command is alive and working - the game teleports them to
+                // the player when left behind and they follow along fine.
+                // Dropping on the flag alone delisted a companion who had
+                // been following the whole time (field report: "she teleported
+                // to me and started following"), and the delisting broke
+                // close-chat and stop-follow for her. Far AND roleless for
+                // three checks is lost; near is with you, role or not.
+                let player = GetPlayer(f.npc.GetGame());
+                let near: Float = IsDefined(player)
+                    ? Vector4.Distance(f.npc.GetWorldPosition(), player.GetWorldPosition())
+                    : 0.0;
+                if IsDefined(aic) && !aic.IsPlayerCompanion() && near > 20.0 {
                     f.retries += 1;
                     if f.retries > 3 {
-                        StLog(s"follow: \(StActions.Readable(f.npc)) is not actually following - dropping it");
+                        StLog(s"follow: \(StActions.Readable(f.npc)) is lost - far away and not keeping up");
                         ArrayErase(this.followers, i);
                         this.SaveFollowers();
                     } else {
                         StLog(s"follow: re-issuing the follow for \(StActions.Readable(f.npc))");
-                        this.Follow(f.npc);
+                        this.Follow(f.npc, true);
                     }
                 } else {
                     f.retries = 0;
@@ -557,6 +570,31 @@ public class StActions extends IScriptable {
         StLog("chat: NPC returned to where the conversation started");
     }
 
+    // The WALKING version of SendHome, for ordinary chat close and "go back
+    // to your post". The teleport above is the right tool only for a hard
+    // undo (/reset, stuck NPCs); on a normal close it is a visible snap -
+    // someone who stepped closer mid-chat instantly teleports back to their
+    // spot the moment the panel closes (field report: "npcs just teleport
+    // around"). Walking costs a few seconds and reads as their own decision.
+    public func WalkHome(npc: ref<NPCPuppet>) -> Void {
+        if !this.hasChatHome || !IsDefined(npc) {
+            return;
+        }
+        let cmd = new AIMoveToCommand();
+        let wp: WorldPosition;
+        WorldPosition.SetVector4(wp, this.chatHomePos);
+        AIPositionSpec.SetWorldPosition(cmd.movementTarget, wp);
+        cmd.movementType = moveMovementType.Walk;
+        cmd.finishWhenDestinationReached = true;
+        cmd.desiredDistanceFromTarget = 0.5;
+        if IsDefined(this.holdCmd) {
+            this.StopCmd(npc, this.holdCmd);
+            this.holdCmd = null;
+        }
+        AIComponent.SendCommand(npc, cmd);
+        StLog("chat: NPC walking back to where the conversation started");
+    }
+
     // ONE setup at chat open, for everyone. Doing this per-animation is what
     // made NPCs turn mid-conversation and snap back after every line (field
     // report). Now they turn to you once when the chat opens, gesture facing
@@ -569,6 +607,19 @@ public class StActions extends IScriptable {
     public func PrepareForChat(npc: ref<NPCPuppet>, isCrowd: Bool, gesturesOn: Bool) -> Void {
         if !IsDefined(npc) || npc.IsDead() {
             return;
+        }
+        // Fresh chat, fresh slate: no follow has been asked for yet.
+        this.followAsked = false;
+        // A turn that could not take LAST chat must not still be given up,
+        // and a look-at left over from a previous conversation must not
+        // silently block this one's (FacePlayer no-ops while chatLookAt is
+        // set, whatever - or whoever - it points at).
+        this.turnGaveUp = false;
+        this.lastTurnHaveValid = false;
+        this.idleGaveUp = false;
+        if IsDefined(this.chatLookAt) {
+            LookAtRemoveEvent.QueueRemoveLookatEvent(npc, this.chatLookAt);
+            this.chatLookAt = null;
         }
         let game = npc.GetGame();
         let ws = GameInstance.GetWorkspotSystem(game);
@@ -693,10 +744,12 @@ public class StActions extends IScriptable {
         }
         // Put them back exactly where the conversation found them, facing the
         // way they were - unless you asked them to be somewhere else. A
-        // following companion should stay following when you close the chat;
-        // only NPCs whose routine WE interrupted get sent back.
-        if this.chatTookOver && !this.IsFollowing(npc) {
-            this.SendHome(npc);
+        // following companion stays following when you close the chat, and so
+        // does someone whose follow FAILED (crowd NPCs the engine refuses to
+        // register get dropped from the follower list mid-chat - the ask
+        // still counts). Only NPCs whose routine WE interrupted get sent back.
+        if this.chatTookOver && !this.IsFollowing(npc) && !this.followAsked {
+            this.WalkHome(npc);
         }
         this.bodyTurned = false;
         this.chatTookOver = false;
@@ -896,11 +949,16 @@ public class StActions extends IScriptable {
             return "drop";
         }
         // Melting back into the crowd - the game's own AIJoinCrowdCommand,
-        // and the most Night City exit there is.
-        if StActions.Did(b, "disappears") || StActions.Did(b, "melts")
-            || StActions.Did(b, "vanishes") || StActions.Did(b, "slips away")
-            || StActions.Did(b, "blends") || StActions.Did(b, "loses himself")
-            || StActions.Did(b, "loses herself") {
+        // and the most Night City exit there is. FULL PHRASES ONLY, never the
+        // bare verb: AIJoinCrowdCommand reads as an instant despawn, so a
+        // beat like "her voice blends into the lobby noise" or "her
+        // expression melts" - narration, not an exit - made the NPC simply
+        // cease to be there, with nothing in the dialogue saying she left
+        // (field report: the Konpeki receptionist).
+        if StActions.Did(b, "disappears into the crowd") || StActions.Did(b, "vanishes into the crowd")
+            || StActions.Did(b, "melts into the crowd") || StActions.Did(b, "blends into the crowd")
+            || StActions.Did(b, "blends in with the crowd") || StActions.Did(b, "slips away")
+            || StActions.Did(b, "loses himself in the crowd") || StActions.Did(b, "loses herself in the crowd") {
             return "crowd";
         }
         return "";
@@ -1228,12 +1286,23 @@ public class StActions extends IScriptable {
             return;
         }
         if Equals(intent, "follow") {
-            // ALWAYS ISSUE IT. "They are already following, so this is just
-            // talk" assumed the list and the game agree - and after a reload
-            // the list can hold someone the game never got the command for,
-            // so every later request was swallowed and she said yes and stood
-            // there (field report). Re-sending a follow command to someone
-            // already following costs nothing.
+            // ALWAYS ISSUE THE COMMAND. "They are already following, so this is
+            // just talk" assumed the list and the game agree - and after a
+            // reload the list can hold someone the game never got the command
+            // for, so every later request was swallowed and she said yes and
+            // stood there (field report). But re-running the FULL Follow() on
+            // someone already following tears down their animation, re-paths
+            // them and announces "starts following you" again - so a companion
+            // whose every reply narrated following ("keeps pace", "lead the
+            // way"), or who answered a stale ask with a bare "got it",
+            // visibly re-followed several times in one conversation (field
+            // report). Already-following re-sends the raw AI command only:
+            // the reload desync still heals, nothing visible re-happens.
+            if this.IsFollowing(npc) {
+                StLog("intent: follow - already following, re-sending command only");
+                this.ReFollow(npc);
+                return;
+            }
             this.Follow(npc);
             return;
         }
@@ -1285,7 +1354,7 @@ public class StActions extends IScriptable {
         }
         if Equals(intent, "post") {
             // Their own spot, which the chat recorded when it opened.
-            this.SendHome(npc);
+            this.WalkHome(npc);
         }
     }
 
@@ -1692,7 +1761,7 @@ public class StActions extends IScriptable {
         this.yawLoaded = true;
         let fs = RealTalkFS.Get();
         if IsDefined(fs) && IsDefined(fs.Storage()) {
-            let f = fs.Storage().GetFile("anim_yaw.txt");
+            let f = fs.Storage().GetFile("anim_yaw2.txt");
             if IsDefined(f) {
                 this.yawOffset = StringToFloat(f.ReadAsText(), 0.0);
             }
@@ -1705,7 +1774,7 @@ public class StActions extends IScriptable {
         this.yawLoaded = true;
         let fs = RealTalkFS.Get();
         if IsDefined(fs) && IsDefined(fs.Storage()) {
-            let f = fs.Storage().GetFile("anim_yaw.txt");
+            let f = fs.Storage().GetFile("anim_yaw2.txt");
             if IsDefined(f) {
                 f.WriteText(FloatToStringPrec(v, 2));
             }
@@ -1718,21 +1787,35 @@ public class StActions extends IScriptable {
         if !this.talkAnimating || !IsDefined(npc) || npc.IsDead() {
             return;
         }
-        // Measured against where the player actually is, not against a
-        // remembered number - the old comparison used a desired yaw that was
-        // zero in every log it ever printed.
         let player = GetPlayer(npc.GetGame());
         if !IsDefined(player) {
             return;
         }
+        // BOTH SIDES IN HEADING SPACE. The old code compared
+        // ToRotation().Yaw against the quaternion euler - two conventions -
+        // and the quaternion reads ALL ZERO for a puppet parented to a
+        // gesture workspot, so "actual" was 0.0, "want" frequently 0.0 with
+        // it, the error computed as zero and the correction never fired
+        // (every log: "gesture yaw: facing -0.000000, player is at
+        // 0.000000"). GetWorldForward works while parented - the turn path
+        // has relied on it all along - and Heading() on both sides cancels
+        // any convention offset between them.
         let toP: Vector4 = player.GetWorldPosition() - npc.GetWorldPosition();
         toP.Z = 0.0;
-        let want: Float = Vector4.ToRotation(toP).Yaw;
-        let actual: Float = Quaternion.ToEulerAngles(npc.GetWorldOrientation()).Yaw;
+        let want: Float = Vector4.Heading(toP);
+        let actual: Float = Vector4.Heading(npc.GetWorldForward());
         let err: Float = StActions.Norm180(want - actual);
         StLog(s"gesture yaw: facing \(actual), player is at \(want), off by \(err)");
-        if AbsF(err) > 20.0 {
-            this.TurnToPlayer(npc, "gesture left them facing away");
+        // CALIBRATE, THEN LET IT LAND. The gesture device owns the body
+        // while it plays - turning the puppet mid-gesture fights the device
+        // and steps it out of the anim. Instead: fold the measured error
+        // into the device offset and persist it. The current line plays out
+        // as-is; the NEXT gesture (every reply starts one) enters aimed
+        // right, and the learning survives restarts. The one thing the
+        // original calibration design promised and never wired up.
+        if AbsF(err) > 10.0 {
+            this.SaveYawOffset(StActions.Norm180(this.YawOffset() + err));
+            StLog(s"gesture yaw: offset learned \(err) - next gesture aims true");
         }
     }
 
@@ -1775,12 +1858,20 @@ public class StActions extends IScriptable {
         if this.talkAnimating || !IsDefined(npc) || npc.IsDead() || npc.IsCharacterChildren() {
             return;
         }
-        // A follower stays a follower. Playing a gesture would put them back
-        // in a workspot and end the follow - so while they are walking with
-        // you they talk without their hands.
+        // A follower CAN talk with their hands - when they are standing with
+        // you. The gesture workspot ends the engine's follow command, so a
+        // companion catching up (far away) still skips - playing a workspot
+        // mid-walk would strand them - but up close the gesture plays and the
+        // follow is re-issued the moment it ends. The old blanket skip meant
+        // a companion animated NOTHING through a whole scene (field report).
         if this.IsFollowing(npc) {
-            StLog("gesture: skipped - NPC is following");
-            return;
+            let player = GetPlayer(npc.GetGame());
+            if !IsDefined(player)
+                || Vector4.Distance(npc.GetWorldPosition(), player.GetWorldPosition()) > 6.0 {
+                StLog("gesture: skipped - follower is not standing with you");
+                return;
+            }
+            this.refollowAfterGesture = true;
         }
         // Each skip logs its reason (Debug Log on): "no gesture" reports
         // must diagnose themselves, same rule as the voice ladder.
@@ -1858,11 +1949,16 @@ public class StActions extends IScriptable {
         if IsDefined(facePlayer) {
             let toPlayer: Vector4 = facePlayer.GetWorldPosition() - npc.GetWorldPosition();
             toPlayer.Z = 0.0;
-            this.talkDesiredYaw = Vector4.ToRotation(toPlayer).Yaw;
+            // HEADING SPACE, the same one VerifyTalkYaw measures in - the
+            // entry aim and the verification must agree on what a yaw means,
+            // or the calibration learns the wrong number. No guessed +90:
+            // a wrong seed just costs one misaligned gesture before the
+            // offset learns.
+            this.talkDesiredYaw = Vector4.Heading(toPlayer);
         } else {
-            this.talkDesiredYaw = Quaternion.ToEulerAngles(npc.GetWorldOrientation()).Yaw;
+            this.talkDesiredYaw = Vector4.Heading(npc.GetWorldForward());
         }
-        e.Yaw = StActions.Norm180(this.talkDesiredYaw + 90.0 + this.YawOffset());
+        e.Yaw = StActions.Norm180(this.talkDesiredYaw + this.YawOffset());
         spec.orientation = EulerAngles.ToQuat(e);
         ArrayPush(spec.tags, n"RealTalk.TalkAnim");
         this.talkAnimEntId = GameInstance.GetDynamicEntitySystem().CreateEntity(spec);
@@ -1893,8 +1989,9 @@ public class StActions extends IScriptable {
         if !IsDefined(ent) {
             this.talkAnimTries += 1;
             if this.talkAnimTries > 12 {
-                this.talkAnimating = false;
-                GameInstance.GetDynamicEntitySystem().DeleteEntity(this.talkAnimEntId);
+                // Through StopTalking, not a manual teardown, so a paused
+                // follow still gets resumed when the entity never appeared.
+                this.StopTalking(null);
                 return;
             }
             this.ScheduleTalkTick(npc.GetGame());
@@ -2050,6 +2147,18 @@ public class StActions extends IScriptable {
             GameInstance.GetWorkspotSystem(who.GetGame()).StopInDevice(who);
         }
         GameInstance.GetDynamicEntitySystem().DeleteEntity(this.talkAnimEntId);
+        // The gesture is over and the workspot has let them go. If it paused
+        // a live follow, pick it back up - quietly. The engine follow is dead
+        // regardless of what the followers list says (that divergence is how
+        // "she said yes and stood there" used to happen), so re-issue the
+        // command unconditionally, not just when the list disagrees.
+        if this.refollowAfterGesture {
+            this.refollowAfterGesture = false;
+            if IsDefined(who) && !who.IsDead() && this.followAsked {
+                this.ReFollow(who);
+                StLog("gesture: follow resumed after the gesture");
+            }
+        }
     }
 
     // ------------------------------------------------------------------
@@ -2208,6 +2317,37 @@ public class StActions extends IScriptable {
     private let lastTurnAt: Float;
     private let turnGaveUp: Bool;
 
+    // Did the last body turn actually move the heading? A puppet whose
+    // rotation is owned elsewhere (a talking gesture is itself a workspot
+    // and pins the facing) snaps back the instant each turn step lands - the
+    // log then repeats "turning -79.6 | heading=-90.0" every three seconds
+    // forever, a tug-of-war nobody wins (field report: "why is she not
+    // looking at me").
+    private let lastTurnHave: Float;
+    private let lastTurnHaveValid: Bool;
+
+    // TRUE the moment a follow was asked for in THIS chat, whatever the
+    // engine did with it. The close-chat "return to your post" used to check
+    // only IsFollowing - and the verify tick DROPS crowd NPCs who never
+    // register as companions, so an escort who had just agreed to come with
+    // you got marched straight back to her couch the moment the panel closed
+    // (field report). Asked-to-leave-your-post outranks returned-to-routine,
+    // even when the follow itself failed.
+    private let followAsked: Bool;
+
+    // A gesture just paused a LIVE follow (the workspot ends the engine's
+    // follow command). When the gesture finishes, the follow is quietly
+    // re-issued - so a companion standing with you can talk with their hands
+    // without being permanently unfollowed by the gesture.
+    private let refollowAfterGesture: Bool;
+
+    // One step-out-of-the-idle attempt per chat. When the release does not
+    // take (crowd NPCs whose idle re-attaches them immediately), the poller
+    // used to re-fight the workspot every tick - 200+ StopInDevice calls in
+    // one conversation, the NPC never turned, and the fight itself was the
+    // only visible result. Set on the first attempt; reset at chat open.
+    private let idleGaveUp: Bool;
+
     public func TurnToPlayer(npc: ref<NPCPuppet>, why: String) -> Void {
         if !IsDefined(npc) || npc.IsDead() {
             return;
@@ -2227,6 +2367,15 @@ public class StActions extends IScriptable {
         }
         let game = npc.GetGame();
         let ws = GameInstance.GetWorkspotSystem(game);
+        // WHILE A TALKING GESTURE PLAYS, THE DEVICE OWNS THE BODY. Turning
+        // the puppet underneath it is a fight the device wins - the log's
+        // endlessly repeated "turning -79.6 | heading=-90.0" was exactly
+        // that, gesture device re-pinning the heading after every step. The
+        // device is aimed at you (calibrated by VerifyTalkYaw); the body
+        // turn resumes the moment the gesture ends.
+        if this.talkAnimating {
+            return;
+        }
         // A WORKSPOT IS NOT A REASON TO TALK TO SOMEONE'S BACK. This used to
         // return silently for anyone standing in an authored idle, to avoid
         // fighting their animation - which is why Panam, leaning on something
@@ -2235,6 +2384,10 @@ public class StActions extends IScriptable {
         // and mark that we did, so closing the chat puts them back exactly
         // where and how they were.
         if IsDefined(ws) && ws.IsActorInWorkspot(npc) && !this.talkAnimating {
+            if this.idleGaveUp {
+                return;   // the first release did not take - the crowd system won this idle
+            }
+            this.idleGaveUp = true;
             ws.StopInDevice(npc);
             this.chatTookOver = true;
             StLog("chat: stepped them out of an idle so they can face you");
@@ -2274,6 +2427,21 @@ public class StActions extends IScriptable {
         let delta: Float = Vector4.GetAngleDegAroundAxis(fwd, dir, npc.GetWorldUp());
         let want: Float = Vector4.Heading(dir);
         let have: Float = Vector4.Heading(fwd);
+        // ONE RE-TRY, THEN THE BODY IS NOT OURS. If the heading did not move
+        // since the previous attempt and she is still meaningfully off, a
+        // gesture or authored idle owns her rotation - stop re-issuing the
+        // turn every tick and leave her facing to it. The eyes/head look-at
+        // (KeepFacing -> FacePlayer) is the part she can still give you.
+        if this.turnGaveUp {
+            return;
+        }
+        if this.lastTurnHaveValid && AbsF(have - this.lastTurnHave) < 5.0 && AbsF(delta) >= 12.0 {
+            this.turnGaveUp = true;
+            StLog(s"chat: turn did not take (heading still \(have)) - leaving their facing to the idle, look-at only");
+            return;
+        }
+        this.lastTurnHave = have;
+        this.lastTurnHaveValid = true;
         if AbsF(delta) < 12.0 {
             StLog(s"chat: no turn needed, off by \(delta)"
                 + s" | facing=(\(fwd.X), \(fwd.Y)) toPlayer=(\(dir.X), \(dir.Y))"
@@ -2848,6 +3016,19 @@ public class StActions extends IScriptable {
             + "hand_over_weapon: gives their weapon to V\n"
             + "attack: opens fire, stabs, lunges, starts a fight\n"
             + "stand_down: stops fighting, lowers their weapon, calms down\n"
+            + "cross_arms: folds their arms across their chest\n"
+            + "hands_on_hips: plants their hands on their hips\n"
+            + "point: points at something or someone\n"
+            + "shrug: shrugs\n"
+            + "stretch: stretches, rolls their shoulders or neck\n"
+            + "gesture_explain: talks with their hands, gestures as they explain\n"
+            + "look_around: looks around, scans the area\n"
+            + "facepalm: puts a hand to their face\n"
+            + "wave: waves\n"
+            + "clap: claps\n"
+            + "bow: bows\n"
+            + "pray: clasps their hands, prays\n"
+            + "dance: dances, sways to music\n"
             + "angry: anger, rage, hostility on their face\n"
             + "curious: curiosity, interest, intrigue\n"
             + "disgusted: disgust, contempt, revulsion\n"
@@ -2867,6 +3048,9 @@ public class StActions extends IScriptable {
         return "root ::= \"follow\" | \"stay_here\" | \"leave\" | \"run\""
             + " | \"step_back\" | \"step_closer\" | \"drop_item\" | \"holster\""
             + " | \"hand_over_weapon\" | \"attack\" | \"stand_down\""
+            + " | \"cross_arms\" | \"hands_on_hips\" | \"point\" | \"shrug\""
+            + " | \"stretch\" | \"gesture_explain\" | \"look_around\" | \"facepalm\""
+            + " | \"wave\" | \"clap\" | \"bow\" | \"pray\" | \"dance\""
             + " | \"angry\" | \"curious\" | \"disgusted\" | \"afraid\""
             + " | \"happy\" | \"amused\" | \"sad\" | \"shocked\""
             + " | \"surprised\" | \"none\"";
@@ -2887,6 +3071,29 @@ public class StActions extends IScriptable {
         if Equals(x, "hand_over_weapon") { return "handover"; }
         if Equals(x, "attack") { return "attack"; }
         if Equals(x, "stand_down") { return "standdown"; }
+        return "";
+    }
+
+    // classifier id -> a gesture the TTS server's rescue map understands. The
+    // id IS the server key, so this just whitelists the known gesture ids (the
+    // prop/furniture gestures were never given ids). "" = not a gesture. Used
+    // only to fill req.gesture, which rescues the anim when the server's own
+    // free-text search declines - it never overrides a confident match.
+    public static func MapGesture(id: String) -> String {
+        let x: String = StrLower(StActions.TrimEnds(id));
+        if Equals(x, "cross_arms") { return x; }
+        if Equals(x, "hands_on_hips") { return x; }
+        if Equals(x, "point") { return x; }
+        if Equals(x, "shrug") { return x; }
+        if Equals(x, "stretch") { return x; }
+        if Equals(x, "gesture_explain") { return x; }
+        if Equals(x, "look_around") { return x; }
+        if Equals(x, "facepalm") { return x; }
+        if Equals(x, "wave") { return x; }
+        if Equals(x, "clap") { return x; }
+        if Equals(x, "bow") { return x; }
+        if Equals(x, "pray") { return x; }
+        if Equals(x, "dance") { return x; }
         return "";
     }
 
@@ -3020,7 +3227,13 @@ public class StActions extends IScriptable {
         }
     }
 
-    private func Follow(npc: ref<NPCPuppet>) -> Void {
+    // quiet=true is the REPAIR path (verify tick): re-send everything, but no
+    // "starts following you" announce. The verify tick re-issues up to three
+    // times for NPCs the game hasn't registered as companions - crowd-class
+    // NPCs apparently never register - and each re-issue announcing turned
+    // one follow into four banners and four history lines per reply
+    // (field report: the escort's chat log).
+    private func Follow(npc: ref<NPCPuppet>, opt quiet: Bool) -> Void {
         let player = GetPlayer(npc.GetGame());
         if !IsDefined(player) {
             return;
@@ -3057,6 +3270,10 @@ public class StActions extends IScriptable {
         cmd.tolerance = 1.5;
         cmd.stopWhenDestinationReached = false;
         cmd.movementType = moveMovementType.Walk;
+        // They were ASKED to leave their post - see followAsked. Set before
+        // anything can fail: even a follow the engine drops must stop the
+        // close-chat return-to-post from undoing the fiction.
+        this.followAsked = true;
         // AS MANY AS ASK. Companions are a crowd, not a slot - and each of
         // them keeps their own command so any one of them can be stopped
         // without touching the others.
@@ -3072,8 +3289,33 @@ public class StActions extends IScriptable {
         // along, the command is the fallback if a role does not take.
         this.SetCompanion(npc, true);
         this.SaveFollowers();
-        StLog("action: FOLLOW");
-        StActions.Announce("starts following you");
+        StLog(quiet ? "action: FOLLOW (quiet re-issue)" : "action: FOLLOW");
+        if !quiet {
+            StActions.Announce("starts following you");
+        }
+    }
+
+    // The quiet half of Follow(): re-issue the AI command to someone already
+    // in the followers list, touching nothing else. No workspot teardown (they
+    // are walking, not gesturing), no hold-position dance, no announce, no
+    // SaveFollowers churn - a re-affirmed follow should be invisible.
+    private func ReFollow(npc: ref<NPCPuppet>) -> Void {
+        let player = GetPlayer(npc.GetGame());
+        if !IsDefined(player) {
+            return;
+        }
+        let f = this.FindFollower(npc);
+        if !IsDefined(f) {
+            return;
+        }
+        let cmd = new AIFollowTargetCommand();
+        cmd.target = player;
+        cmd.desiredDistance = 2.0;
+        cmd.tolerance = 1.5;
+        cmd.stopWhenDestinationReached = false;
+        cmd.movementType = moveMovementType.Walk;
+        f.cmd = cmd;
+        AIComponent.SendCommand(npc, cmd);
     }
 
     private func StopFollowing(npc: ref<NPCPuppet>) -> Void {
