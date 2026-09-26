@@ -30,6 +30,11 @@ import uuid
 import wave
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
+# voice_forge.py sits next to this file. The Windows embeddable Python has a
+# ._pth file, and when one exists the script's own folder is NOT put on
+# sys.path - so the import below failed on every Windows install and the
+# server died in a minimized window before anyone could see why.
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import voice_forge
 
 ARGS = None

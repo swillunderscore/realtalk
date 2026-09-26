@@ -368,3 +368,15 @@ public class RealTalkSettings extends ScriptableSystem {
         }
     }
 }
+
+// Whether RedHttpClient will even try this url. With -no-tls, 0.7.1 allows
+// plain http only to these prefixes (src/HttpClient.cpp); anything else - a
+// hostname, any LAN subnet but 192.168.0.x - gets a null response straight
+// away, with nothing in its own log. From here that looks exactly like a
+// dead server, so the mod has to recognise the url itself.
+public static func StHttpClientAllows(const url: String) -> Bool {
+    return StrBeginsWith(url, "https://")
+        || StrBeginsWith(url, "http://127.0.0.1")
+        || StrBeginsWith(url, "http://localhost")
+        || StrBeginsWith(url, "http://192.168.0.");
+}

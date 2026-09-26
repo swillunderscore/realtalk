@@ -1762,9 +1762,20 @@ public class StChat extends ScriptableSystem {
         // sat waiting for a reply that a dead socket was never going to send.
         let eui = RealTalkUI.Get();
         if !IsDefined(response) {
-            StLog("no response object");
-            if IsDefined(eui) && eui.IsOpen() {
-                eui.AddAction("no reply came back - is your model server running?");
+            let url = IsDefined(settings) ? settings.GetEndpoint() : "";
+            if StrLen(url) > 0 && !StHttpClientAllows(url) {
+                // Refused before any socket opened - see StHttpClientAllows.
+                StLog(s"no response object - RedHttpClient refuses plain http to \(url)");
+                StLog("  it only allows http://127.0.0.1, http://localhost and http://192.168.0.x.");
+                StLog("  Model on another machine? Forward a local port to it and use 127.0.0.1 (see README).");
+                if IsDefined(eui) && eui.IsOpen() {
+                    eui.AddAction("RedHttpClient won't connect to that server address - see the README section on running the model on another machine.");
+                }
+            } else {
+                StLog("no response object");
+                if IsDefined(eui) && eui.IsOpen() {
+                    eui.AddAction("no reply came back - is your model server running?");
+                }
             }
             this.FlushReveal();
             return;

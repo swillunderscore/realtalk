@@ -30,7 +30,8 @@ cp server/realtalk-tts.py server/voice_forge.py \
 # ..\.. from its own location and calls realtalk-tts.py beside itself, and
 # the README's launch line points at tools\RealTalk\realtalk-launch.bat.
 # Both launchers coexist harmlessly; each OS ignores the other's.
-cp server/windows/realtalk-launch.bat server/windows/bootstrap.ps1 "$STAGE/tools/RealTalk/"
+cp server/windows/realtalk-launch.bat server/windows/realtalk-voice.bat \
+   server/windows/bootstrap.ps1 "$STAGE/tools/RealTalk/"
 cp README.md "$STAGE/"
 
 # Nothing derived from the game, and nothing machine-local, may ship.

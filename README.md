@@ -24,7 +24,8 @@ Steam → Cyberpunk 2077 → Properties → Launch Options:
 
 RedHttpClient refuses plain `http://` without it, and fails silently — the
 single most common setup problem. Cloud (OpenRouter) users skip this. GOG/Epic:
-add `-no-tls` to the launch arguments the same way.
+add `-no-tls` to the launch arguments the same way (for **voice**, see the
+GOG/Epic note under Voice).
 
 **2. This mod changes your save, and some of it can't be undone.**
 NPCs act on the conversation — follow you, take or hand over eddies, walk off,
@@ -135,6 +136,29 @@ auto-start mechanism, which is why there's no in-game "start server" button.
 </details>
 
 <details>
+<summary>Model on another machine</summary>
+
+Even with `-no-tls`, RedHttpClient only allows plain `http://` to three
+address prefixes: `http://127.0.0.1`, `http://localhost` and `http://192.168.0.`.
+Anything else is refused silently. That includes a hostname
+(`http://my-mac:1234/...`) and any other LAN subnet (`192.168.1.x`, `10.x`, …).
+If your model server is at `192.168.0.x`, pick **Custom** and put its URL in the
+config file. Otherwise, forward a local port to it. Run this once in an
+**admin** PowerShell; it persists across reboots:
+
+```powershell
+netsh interface portproxy add v4tov4 listenaddress=127.0.0.1 listenport=1234 connectaddress=192.168.1.50 connectport=1234
+# undo:
+netsh interface portproxy delete v4tov4 listenaddress=127.0.0.1 listenport=1234
+```
+
+Use your server's IP and port, and the matching `127.0.0.1` port. Then pick the
+program's preset in the dropdown (LM Studio on its standard port 1234, as here),
+or **Custom** with `http://127.0.0.1:<port>/v1/chat/completions`. The server
+has to accept LAN connections (in LM Studio: *Serve on Local Network*).
+</details>
+
+<details>
 <summary>Hardware — the model shares your GPU with the game</summary>
 
 | Your VRAM | What to do |
@@ -142,7 +166,7 @@ auto-start mechanism, which is why there's no in-game "start server" button.
 | **16 GB+** | Comfortable. ~5 GB model + game with margin. Recommended. |
 | **12 GB** | Fine at 1080p/1440p; watch texture settings. |
 | **8 GB** | Tight — realistically low settings, no RT, and a smaller quant (Q4_K_M ~4.1 GB). |
-| **< 8 GB** | Run the model on CPU or a second machine and point "Custom" at it. |
+| **< 8 GB** | Run the model on CPU or a second machine (see **Model on another machine** below). |
 
 Ray tracing roughly doubles the game's VRAM use. Reference figures on a 16 GB
 card, game running with RT on: game ~9 GB + model/cache ~5.6 GB ≈ 14.6 GB.
@@ -248,6 +272,17 @@ released tools fetched from their official sources by a short script you can
 read. Nothing packaged, nothing system-wide. After that: game starts, voice
 starts with it, both stop together.
 
+**GOG / Epic:** their launchers can only *append* arguments, so they can't wrap
+the game in the .bat. Run `tools\RealTalk\realtalk-launch.bat` yourself instead
+(a desktop shortcut to it works). With no arguments it starts
+`bin\x64\Cyberpunk2077.exe -no-tls` and does the same as the Steam line. If you'd
+rather launch from Galaxy/Epic, start `tools\RealTalk\realtalk-voice.bat` before
+you play and close its window when you're done. It needs one run of
+`realtalk-launch.bat` first, for the setup.
+
+The voice server writes its output to `tools\RealTalk\logs\realtalk-tts.log`.
+If voice doesn't work, look there first.
+
 **Voices are automatic and always local.** The first time a named character
 speaks, the server extracts their real VO from *your* archives, builds a
 reference clip, and clones it on your CPU — cached from then on. Crowd NPCs get
@@ -306,7 +341,10 @@ key, and a house-style prompt applied to every character.
 
 **No "[R] talk" on anyone** — check **Enabled**, and that you're looking at a
 living, non-hostile NPC. Crowd pedestrians need **Crowd NPCs** on.
-**Chat opens but no replies** — you missed `-no-tls`.
+**Chat opens but no replies** — you missed `-no-tls`. Or your model server is
+on another machine at an address RedHttpClient won't allow (see **Model on
+another machine**).
+**Voice doesn't play** — check `tools\RealTalk\logs\realtalk-tts.log`.
 **Replies very slow** — model spilling to system RAM; smaller quant.
 **Stutter while replying** — expected; generation shares the GPU. Lower Reply Length.
 **Empty replies** — you're running a *reasoning* model, which puts output in a

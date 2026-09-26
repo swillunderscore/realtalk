@@ -19,10 +19,16 @@ public class RealTalkConfig extends ScriptableSystem {
     //
     // Must be a full chat-completions URL. Examples:
     //   http://127.0.0.1:8081/v1/chat/completions      (llama.cpp, this machine)
-    //   http://192.168.1.50:8080/v1/chat/completions   (a server on your LAN)
+    //   http://192.168.0.50:8080/v1/chat/completions   (a server on your LAN)
     //
     // NOTE: http:// only works if the game is launched with -no-tls. See the
     // README - this is the single most common reason the mod appears dead.
+    //
+    // Even with -no-tls, RedHttpClient only allows http:// to 127.0.0.1,
+    // localhost and 192.168.0.x. A hostname (http://my-pc:8080/...) or any
+    // other subnet (192.168.1.x, 10.x...) is silently refused. For those,
+    // forward a local port to the other machine and use 127.0.0.1 - the
+    // README ("Model on another machine") has the one-line command.
     public let customBaseUrl: String = "http://127.0.0.1:8081/v1/chat/completions";
 
     // Local servers ignore this and serve whatever model they were started
