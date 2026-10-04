@@ -272,6 +272,14 @@ released tools fetched from their official sources by a short script you can
 read. Nothing packaged, nothing system-wide. After that: game starts, voice
 starts with it, both stop together.
 
+**Adding this line means you accept XTTS-v2's license.** The voice model is
+under the
+[Coqui Public Model License](https://huggingface.co/coqui/XTTS-v2/blob/main/LICENSE.txt)
+— non-commercial use only. Coqui's installer normally asks you to agree in a
+console window, but the launcher runs it where you can't answer, so **the
+launcher says yes for you**. If you don't agree, leave the line out: without
+it the voice model is never downloaded.
+
 **GOG / Epic:** their launchers can only *append* arguments, so they can't wrap
 the game in the .bat. Run `tools\RealTalk\realtalk-launch.bat` yourself instead
 (a desktop shortcut to it works). With no arguments it starts
@@ -364,13 +372,15 @@ how the engine spawns crowds.
 
 This mod uses AI at runtime and **ships none of its output** — no audio, no
 model weights, no game assets, no AI-generated content. The download is
-hand-written scripts and a readable Python server. **Dialogue** is generated
+plain-text mod scripts and a readable Python server. **Dialogue** is generated
 live by the model you connect. **Voices** are synthesized on your CPU by
 XTTS-v2, cloned from lines inside *your own* game archives — never bundled,
 uploaded, or distributed, and off until you enable TTS.
 
 XTTS-v2 downloads on first use from its publisher under the
-[Coqui Public Model License](https://coqui.ai/cpml) (non-commercial).
+[Coqui Public Model License](https://huggingface.co/coqui/XTTS-v2/blob/main/LICENSE.txt)
+(non-commercial). The voice launcher accepts that license on your behalf, so
+setting it up means you agree to it (see **Voice**).
 **If a performer whose voice this can reconstruct, or a rights holder, asks for
 it to come down, it comes down** — no argument.
 
