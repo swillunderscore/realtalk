@@ -19,3 +19,6 @@ server/local.conf
 
 # Built release zips
 dist/
+
+# Claude Code's per-machine permission rules (can hold typed secrets)
+**/.claude/settings.local.json
